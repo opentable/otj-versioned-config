@@ -39,6 +39,6 @@ public interface VersioningServiceProperties
     /**
      * @return Which path to probe when polling for updates
      */
-    @Config("repo.polling.path.probe")
+    @Config("config.repo.polling.path.probe")
     String pollingProbePath();
 }
