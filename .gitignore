@@ -1,0 +1,11 @@
+target/
+/config/
+/frontdoor-config/
+/frontdoor/frontdoor-config/
+/frontdoor/config/
+.DS_Store
+*.iml
+*.log
+.idea
+.project
+.classpath

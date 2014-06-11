@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.opentable</groupId>
+    <artifactId>otj-parent</artifactId>
+    <version>9</version>
+  </parent>
+
+  <scm>
+    <connection>scm:git:git://github.com/opentable/otj-versioned-config.git</connection>
+    <developerConnection>scm:git:git@github.com:opentable/otj-versioned-config.git</developerConnection>
+    <url>http://github.com/opentable/otj-versioned-config</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <groupId>com.opentable.components</groupId>
+  <artifactId>otj-versioned-config</artifactId>
+  <name>otj-versioned-config</name>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+  <description>component for polling configuration information from git.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.opentable.components</groupId>
+      <artifactId>otj-logging</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>17.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.opentable.components</groupId>
+      <artifactId>otj-config</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.inject</groupId>
+      <artifactId>guice</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.skife.config</groupId>
+      <artifactId>config-magic</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.opentable.components</groupId>
+      <artifactId>otj-core</artifactId>
+      <version>1.1.0-SNAPSHOT</version>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>1.8.4</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>
