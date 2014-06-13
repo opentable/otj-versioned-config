@@ -9,10 +9,11 @@ import java.net.URI;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import javax.inject.Inject;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
-import com.google.inject.Inject;
 import org.apache.commons.io.IOUtils;
 
 import com.opentable.function.IOFunction;
