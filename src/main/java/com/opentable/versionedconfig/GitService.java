@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -194,14 +195,33 @@ class GitService implements VersioningService
     {
         final ProcessBuilder processBuilder = new ProcessBuilder(args[0]).command(args).directory(checkoutDir);
         LOG.info("running command in " + checkoutDir + ": " + Joiner.on(' ').join(args));
-        final Process process = processBuilder.start();
+        Process process = null;
         try {
-            if (process.waitFor() != 0) {
-                throw new IOException("Couldn't " + description + ": " + IOUtils.toString(process.getErrorStream()));
+            process = processBuilder.start();
+            if (process.waitFor() == 0) {
+                return outputHandler.apply(process);
             }
-            return outputHandler.apply(process);
-        } catch (InterruptedException e) {
+            throw new IOException("Couldn't " + description + ": " + IOUtils.toString(process.getErrorStream()));
+        } catch (InterruptedException e ) {
             throw new IOException(description + " was interrupted", e);
+        } finally {
+            makeSureProcessIsDead(process);
+        }
+    }
+
+    /**
+     * make sure a process is really dead
+     */
+    private void makeSureProcessIsDead(Process process)
+    {
+        if (process == null) {
+            return;
+        }
+        try {
+            process.waitFor(1, TimeUnit.MINUTES);
+            process.destroy();
+        } catch (InterruptedException e1) {
+            e1.printStackTrace();
         }
     }
 }
