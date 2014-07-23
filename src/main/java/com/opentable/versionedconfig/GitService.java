@@ -218,10 +218,10 @@ class GitService implements VersioningService
             return;
         }
         try {
-            process.waitFor(1, TimeUnit.MINUTES);
+            process.waitFor(1, TimeUnit.MILLISECONDS);
             process.destroy();
         } catch (InterruptedException e1) {
-            e1.printStackTrace();
+            // nothing we can do here
         }
     }
 }
