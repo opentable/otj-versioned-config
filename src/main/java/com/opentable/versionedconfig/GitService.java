@@ -15,6 +15,7 @@ import javax.inject.Inject;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+
 import org.apache.commons.io.IOUtils;
 
 import com.opentable.function.IOFunction;
@@ -99,7 +100,7 @@ class GitService implements VersioningService
                     return true;
                 }
             } else {
-                LOG.info("nothing new in config. nothing to do.");
+                LOG.trace("nothing new in config. nothing to do.");
             }
         } catch (IOException e) {
             throw new VersioningServiceException("couldn't check for updates", e);
@@ -194,7 +195,7 @@ class GitService implements VersioningService
     private <T> T runProcess(String description, IOFunction<Process, T> outputHandler, String... args) throws IOException
     {
         final ProcessBuilder processBuilder = new ProcessBuilder(args[0]).command(args).directory(checkoutDir);
-        LOG.info("running command in " + checkoutDir + ": " + Joiner.on(' ').join(args));
+        LOG.trace("running command in " + checkoutDir + ": " + Joiner.on(' ').join(args));
         Process process = null;
         try {
             process = processBuilder.start();
