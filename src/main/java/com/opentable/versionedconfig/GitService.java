@@ -219,8 +219,10 @@ class GitService implements VersioningService
             return;
         }
         try {
-            process.waitFor(1, TimeUnit.MILLISECONDS);
-            process.destroy();
+            LOG.error("Git subprocess possibly refused to die, calling wait on it again to try to prevent a zombie");
+            process.waitFor(3000, TimeUnit.MILLISECONDS);
+            LOG.error("Destroying process forcibly");
+            process.destroyForcibly();
         } catch (InterruptedException e1) {
             // nothing we can do here
         }

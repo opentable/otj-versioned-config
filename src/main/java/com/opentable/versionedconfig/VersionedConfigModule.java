@@ -9,5 +9,6 @@ public class VersionedConfigModule extends AbstractModule
     {
         bind(VersioningService.class).to(GitService.class);
         bind(ConfigPollingService.class).asEagerSingleton();
+        // you're going to need to bind something which implements ConfigUpdateAction in your app
     }
 }

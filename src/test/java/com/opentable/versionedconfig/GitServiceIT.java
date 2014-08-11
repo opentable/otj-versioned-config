@@ -1,12 +1,12 @@
 package com.opentable.versionedconfig;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
-import java.util.function.Consumer;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -38,8 +38,8 @@ public class GitServiceIT
         workFolder.create();
         final File checkoutSpot = new File(workFolder.getRoot(), "otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = versioningServicePropertiesForTest(checkoutSpot);
-
-        VersioningService service = injectorForTest(versioningServiceProperties).getInstance(VersioningService.class);
+        ConfigUpdateAction action = mock(ConfigUpdateAction.class);
+        VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
         assertTrue("checkout directory should exist", checkoutSpot.exists());
     }
 
@@ -50,16 +50,16 @@ public class GitServiceIT
         final File checkoutSpot = new File(workFolder.getRoot(), "otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = versioningServicePropertiesForTest(checkoutSpot);
 
-        VersioningService service = injectorForTest(versioningServiceProperties).getInstance(VersioningService.class);
-
         final StringBuilder config = new StringBuilder();
-        Consumer<InputStream> consumer = stream -> {
+        ConfigUpdateAction action = stream -> {
             try {
                 config.append(IOUtils.toString(stream));
             } catch (IOException e) {
             }
         };
-        service.readConfig(consumer);
+        VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
+
+        service.readConfig(action);
         final String configString = config.toString();
         System.out.println("configString=" + configString);
         assertTrue(!configString.isEmpty());
@@ -71,11 +71,12 @@ public class GitServiceIT
         final URI source;
         final String githubAuthKey = System.getProperty("testing.github.auth-key");
         if (githubAuthKey == null) {
-            source = URI.create("file:../otpl-deploy");
+            fail("please supply github auth key");
+            return null;
         } else {
             source = URI.create(String.format("https://%s:x-oauth-basic@github.com/opentable/service-ot-frontdoor-config", githubAuthKey));
         }
-        final VersioningServiceProperties versioningServiceProperties = Mockito.mock(VersioningServiceProperties.class);
+        final VersioningServiceProperties versioningServiceProperties = mock(VersioningServiceProperties.class);
         Mockito.when(versioningServiceProperties.remoteConfigRepository()).thenReturn(source);
         Mockito.when(versioningServiceProperties.configBranch()).thenReturn("master");
         Mockito.when(versioningServiceProperties.pollingProbePath()).thenReturn("mappings.cfg.tsv");
@@ -86,7 +87,7 @@ public class GitServiceIT
         return versioningServiceProperties;
     }
 
-    private Injector injectorForTest(final VersioningServiceProperties versioningServiceProperties)
+    private Injector injectorForTest(final VersioningServiceProperties versioningServiceProperties, ConfigUpdateAction action)
     {
         return Guice.createInjector(new AbstractModule()
         {
@@ -97,6 +98,7 @@ public class GitServiceIT
                 install(new VersionedConfigModule());
                 //install
                 bind(Config.class).toInstance(Config.getEmptyConfig());
+                bind(ConfigUpdateAction.class).toInstance(action);
                 bind(VersioningServiceProperties.class).toInstance(versioningServiceProperties);
             }
         });
