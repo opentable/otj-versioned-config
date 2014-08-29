@@ -195,7 +195,6 @@ class GitService implements VersioningService
     private <T> T runProcess(String description, IOFunction<Process, T> outputHandler, String... args) throws IOException
     {
         final ProcessBuilder processBuilder = new ProcessBuilder(args[0]).command(args).directory(checkoutDir);
-        LOG.trace("running command in " + checkoutDir + ": " + Joiner.on(' ').join(args));
         Process process = null;
         try {
             process = processBuilder.start();
@@ -206,22 +205,23 @@ class GitService implements VersioningService
         } catch (InterruptedException e ) {
             throw new IOException(description + " was interrupted", e);
         } finally {
-            makeSureProcessIsDead(process);
+            makeSureProcessIsDead(process, description);
         }
     }
 
     /**
      * make sure a process is really dead
      */
-    private void makeSureProcessIsDead(Process process)
+    private void makeSureProcessIsDead(Process process, String description)
     {
         if (process == null) {
             return;
         }
         try {
-            LOG.error("Git subprocess possibly refused to die, calling wait on it again to try to prevent a zombie");
-            process.waitFor(3000, TimeUnit.MILLISECONDS);
-            LOG.error("Destroying process forcibly");
+            if (process.waitFor(3000, TimeUnit.MILLISECONDS)) {
+                return; // process is gone already, we're OK.
+            }
+            LOG.error("Destroying process forcibly: " + description);
             process.destroyForcibly();
         } catch (InterruptedException e1) {
             // nothing we can do here
