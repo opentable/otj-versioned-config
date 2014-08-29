@@ -57,8 +57,7 @@ public class ConfigPollingService implements Closeable
     public void update()
     {
         try {
-            boolean updated = versioning.checkForUpdate(onUpdate);
-            LOG.info("ConfigUpdateService performed update? " + updated);
+            versioning.checkForUpdate(onUpdate);
 
         } catch (VersioningServiceException error) {
             LOG.error(error, "Could not reconfigure service! Serious configuration error!");
