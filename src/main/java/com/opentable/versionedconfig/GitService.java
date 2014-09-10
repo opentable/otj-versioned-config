@@ -6,9 +6,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -21,6 +23,8 @@ import org.apache.commons.io.IOUtils;
 import com.opentable.function.IOFunction;
 import com.opentable.logging.Log;
 
+import static java.util.stream.Collectors.toList;
+
 /**
  * Responsible for noticing when service configuration has been updated
  */
@@ -31,7 +35,7 @@ class GitService implements VersioningService
 
     private final VersioningServiceProperties serviceConfig;
     private final File checkoutDir;
-    private final File configFile;
+    private final List<File> configFiles;
 
     private final AtomicReference<String> latestKnownSHA;
 
@@ -53,7 +57,8 @@ class GitService implements VersioningService
             }
             checkoutBranch(serviceConfig.configBranch());
             this.latestKnownSHA = new AtomicReference<>(getCurrentSHA());
-            this.configFile = new File(checkoutDir, serviceConfig.configFile());
+            final Stream<String> filenames = Stream.of(serviceConfig.configFiles().split(","));
+            this.configFiles = filenames.map(name -> new File(checkoutDir, name)).collect(toList());
         } catch (IOException ioException) {
             throw new VersioningServiceException("Configuration initialization failed, application can't start", ioException);
         }
@@ -71,10 +76,13 @@ class GitService implements VersioningService
     @Override
     public void readConfig(Consumer<InputStream> streamTransformer) throws VersioningServiceException
     {
-        try (InputStream in = new FileInputStream(configFile)) {
-            streamTransformer.accept(in);
-        } catch (IOException e) {
-            throw new VersioningServiceException(e);
+        for (File configFile : configFiles) {
+            LOG.info("parsing configuration file " + configFile);
+            try (InputStream in = new FileInputStream(configFile)) {
+                streamTransformer.accept(in);
+            } catch (IOException e) {
+                throw new VersioningServiceException(e);
+            }
         }
     }
 
@@ -89,21 +97,15 @@ class GitService implements VersioningService
     @Override
     public boolean checkForUpdate(Consumer<InputStream> streamTransformer) throws VersioningServiceException
     {
-        try {
-            pull();
-            final String currentSHA = getCurrentSHA();
-            if (!latestKnownSHA.get().equals(currentSHA)) {
-                latestKnownSHA.set(currentSHA);
-                LOG.info("new SHA detected, reloading configuration");
-                try (InputStream stream = getFileInputStream(serviceConfig.configFile())) {
-                    streamTransformer.accept(stream);
-                    return true;
-                }
-            } else {
-                LOG.trace("nothing new in config. nothing to do.");
-            }
-        } catch (IOException e) {
-            throw new VersioningServiceException("couldn't check for updates", e);
+        pull();
+        final String currentSHA = getCurrentSHA();
+        if (!latestKnownSHA.get().equals(currentSHA)) {
+            latestKnownSHA.set(currentSHA);
+            LOG.info("new SHA detected, reloading configuration");
+            readConfig(streamTransformer);
+            return true;
+        } else {
+            LOG.trace("nothing new in config. nothing to do.");
         }
         return false;
     }

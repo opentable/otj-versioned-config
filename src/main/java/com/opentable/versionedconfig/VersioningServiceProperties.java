@@ -25,13 +25,13 @@ public interface VersioningServiceProperties
     String configBranch();
 
     /**
-     * @return Which configuration branch to read
+     * @return Which configuration files(s) to read, comma-separated if more than one
      */
     @Config("config.repo.file")
-    String configFile();
+    String configFiles();
 
     /**
-     * @return How often to pull for updates
+     * @return How often to poll for updates
      */
     @Config("config.repo.polling.interval.seconds")
     long configPollingIntervalSeconds();
