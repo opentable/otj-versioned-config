@@ -44,6 +44,19 @@ public class GitServiceIT
     }
 
     @Test
+    public void canGetUpdates() throws IOException, VersioningServiceException {
+        workFolder.create();
+        final File checkoutSpot = new File(workFolder.getRoot(), "otpl-deploy");
+        final VersioningServiceProperties versioningServiceProperties = versioningServicePropertiesForTest(checkoutSpot);
+        ConfigUpdateAction action = mock(ConfigUpdateAction.class);
+        VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
+        final boolean[] updateDetected = {false};
+        service.checkForUpdate(update -> {
+            updateDetected[0] = true;
+        });
+    }
+
+    @Test
     public void canGetCurrentConfig() throws IOException, VersioningServiceException
     {
         workFolder.create();
@@ -74,7 +87,7 @@ public class GitServiceIT
             fail("please supply github auth key");
             return null;
         } else {
-            source = URI.create(String.format("https://%s:x-oauth-basic@github.com/opentable/service-ot-frontdoor-config", githubAuthKey));
+            source = URI.create("https://github.com/opentable/service-ot-frontdoor-config");
         }
         final VersioningServiceProperties versioningServiceProperties = mock(VersioningServiceProperties.class);
         Mockito.when(versioningServiceProperties.remoteConfigRepository()).thenReturn(source);
@@ -82,6 +95,8 @@ public class GitServiceIT
         Mockito.when(versioningServiceProperties.pollingProbePath()).thenReturn("mappings.cfg.tsv");
         Mockito.when(versioningServiceProperties.configFiles()).thenReturn("/mappings.cfg.tsv");
         Mockito.when(versioningServiceProperties.configPollingIntervalSeconds()).thenReturn(0L);
+        Mockito.when(versioningServiceProperties.repoUsername()).thenReturn(githubAuthKey);
+        Mockito.when(versioningServiceProperties.repoPassword()).thenReturn("x-oauth-basic");
 
         Mockito.when(versioningServiceProperties.localConfigRepository()).thenReturn(URI.create("file:" + checkoutSpot));
         return versioningServiceProperties;

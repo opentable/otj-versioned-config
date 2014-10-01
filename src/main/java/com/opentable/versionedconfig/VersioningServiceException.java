@@ -8,6 +8,10 @@ public class VersioningServiceException extends Exception
     {
         super(message, cause);
     }
+    public VersioningServiceException(String message)
+    {
+        super(message);
+    }
 
     public VersioningServiceException(IOException e)
     {

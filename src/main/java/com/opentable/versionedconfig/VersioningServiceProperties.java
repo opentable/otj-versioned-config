@@ -13,6 +13,19 @@ public interface VersioningServiceProperties
     URI remoteConfigRepository();
 
     /**
+     * @return Repo user name or auth key
+     */
+    @Config("config.repo.username")
+    String repoUsername();
+
+    /**
+     * @return Repo password or auth type
+     */
+    @Config("config.repo.password")
+    String repoPassword();
+
+
+    /**
      * @return Where the configuration should be cloned to, in the local filesystem
      */
     @Config("config.repo.local")
@@ -41,4 +54,5 @@ public interface VersioningServiceProperties
      */
     @Config("config.repo.polling.path.probe")
     String pollingProbePath();
+
 }
