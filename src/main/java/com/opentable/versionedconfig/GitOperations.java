@@ -71,7 +71,7 @@ final class GitOperations {
         try {
             git.checkout().setName(branch).call();
         } catch (GitAPIException cause) {
-            throw new VersioningServiceException("FIXME hey implement this", cause);
+            throw new VersioningServiceException("Could not check out branch " + branch + " from config repo, please ensure it exists", cause);
         }
     }
 
