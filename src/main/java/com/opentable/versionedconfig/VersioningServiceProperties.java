@@ -48,11 +48,4 @@ public interface VersioningServiceProperties
      */
     @Config("config.repo.polling.interval.seconds")
     long configPollingIntervalSeconds();
-
-    /**
-     * @return Which path to probe when polling for updates
-     */
-    @Config("config.repo.polling.path.probe")
-    String pollingProbePath();
-
 }

@@ -1,5 +1,6 @@
 package com.opentable.versionedconfig;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -7,17 +8,23 @@ import static org.mockito.Mockito.mock;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.apache.commons.io.IOUtils;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.dircache.DirCache;
+import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 
 import com.opentable.config.Config;
+import com.opentable.logging.Log;
 
 /**
  * Make sure we can talk to github to grab config. May require local tweaking to pass.
@@ -29,6 +36,7 @@ import com.opentable.config.Config;
 public class GitServiceIT
 {
 
+    private static final Log LOG = Log.findLog();
     @Rule
     public TemporaryFolder workFolder = new TemporaryFolder();
 
@@ -36,7 +44,7 @@ public class GitServiceIT
     public void initializeWillCloneRepo() throws IOException
     {
         workFolder.create();
-        final File checkoutSpot = new File(workFolder.getRoot(), "otpl-deploy");
+        final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = versioningServicePropertiesForTest(checkoutSpot);
         ConfigUpdateAction action = mock(ConfigUpdateAction.class);
         VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
@@ -46,7 +54,7 @@ public class GitServiceIT
     @Test
     public void canGetUpdates() throws IOException, VersioningServiceException {
         workFolder.create();
-        final File checkoutSpot = new File(workFolder.getRoot(), "otpl-deploy");
+        final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = versioningServicePropertiesForTest(checkoutSpot);
         ConfigUpdateAction action = mock(ConfigUpdateAction.class);
         VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
@@ -60,7 +68,7 @@ public class GitServiceIT
     public void canGetCurrentConfig() throws IOException, VersioningServiceException
     {
         workFolder.create();
-        final File checkoutSpot = new File(workFolder.getRoot(), "otpl-deploy");
+        final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = versioningServicePropertiesForTest(checkoutSpot);
 
         final StringBuilder config = new StringBuilder();
@@ -78,6 +86,38 @@ public class GitServiceIT
         assertTrue(!configString.isEmpty());
     }
 
+    @Test
+    public void ignoredPathsDontDoAnything() throws IOException, VersioningServiceException, GitAPIException {
+        final AtomicBoolean firstConfigRead = new AtomicBoolean(false);
+        workFolder.create();
+        final File checkoutSpot = workFolder.newFolder("otpl-deploy");
+        final VersioningServiceProperties versioningServiceProperties = propertiesForMultiConfigFiles(checkoutSpot);
+
+        final ConfigUpdateAction action = stream -> {
+            firstConfigRead.set(true);
+        };
+        final VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
+
+        blurtRandomRepoChange(checkoutSpot);
+
+        final AtomicBoolean secondConfigRead = new AtomicBoolean(false);
+        final ConfigUpdateAction action2 = stream -> {
+            secondConfigRead.set(true);
+        };
+
+        service.readConfig(action);
+        assertEquals(true, firstConfigRead.get());
+        assertEquals(false, secondConfigRead.get());
+    }
+
+    private void blurtRandomRepoChange(File checkoutDir) throws IOException, GitAPIException {
+        LOG.info("blurting random change into repo");
+        Git git = new Git(new FileRepository(new File(checkoutDir, ".git")));
+        File touchy = new File(checkoutDir, "touched");
+        boolean p = touchy.createNewFile();
+        DirCache dirCache = git.add().addFilepattern("touched").call();
+        git.commit().setMessage("how touching");
+    }
 
     public VersioningServiceProperties versioningServicePropertiesForTest(File checkoutSpot)
     {
@@ -92,8 +132,29 @@ public class GitServiceIT
         final VersioningServiceProperties versioningServiceProperties = mock(VersioningServiceProperties.class);
         Mockito.when(versioningServiceProperties.remoteConfigRepository()).thenReturn(source);
         Mockito.when(versioningServiceProperties.configBranch()).thenReturn("master");
-        Mockito.when(versioningServiceProperties.pollingProbePath()).thenReturn("mappings.cfg.tsv");
-        Mockito.when(versioningServiceProperties.configFiles()).thenReturn("/mappings.cfg.tsv");
+        Mockito.when(versioningServiceProperties.configFiles()).thenReturn("/integrationtest/mappings.cfg.tsv");
+        Mockito.when(versioningServiceProperties.configPollingIntervalSeconds()).thenReturn(0L);
+        Mockito.when(versioningServiceProperties.repoUsername()).thenReturn(githubAuthKey);
+        Mockito.when(versioningServiceProperties.repoPassword()).thenReturn("x-oauth-basic");
+
+        Mockito.when(versioningServiceProperties.localConfigRepository()).thenReturn(URI.create("file:" + checkoutSpot));
+        return versioningServiceProperties;
+    }
+
+    public VersioningServiceProperties propertiesForMultiConfigFiles(File checkoutSpot)
+    {
+        final URI source;
+        final String githubAuthKey = System.getProperty("testing.github.auth-key");
+        if (githubAuthKey == null) {
+            fail("please supply github auth key");
+            return null;
+        } else {
+            source = URI.create("https://github.com/opentable/service-ot-frontdoor-config");
+        }
+        final VersioningServiceProperties versioningServiceProperties = mock(VersioningServiceProperties.class);
+        Mockito.when(versioningServiceProperties.remoteConfigRepository()).thenReturn(source);
+        Mockito.when(versioningServiceProperties.configBranch()).thenReturn("master");
+        Mockito.when(versioningServiceProperties.configFiles()).thenReturn("/integrationtest/mappings.cfg.tsv");
         Mockito.when(versioningServiceProperties.configPollingIntervalSeconds()).thenReturn(0L);
         Mockito.when(versioningServiceProperties.repoUsername()).thenReturn(githubAuthKey);
         Mockito.when(versioningServiceProperties.repoPassword()).thenReturn("x-oauth-basic");

@@ -4,18 +4,23 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
+import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 
 import com.opentable.logging.Log;
 
@@ -115,6 +120,28 @@ final class GitOperations {
             }
         } catch (IOException|GitAPIException e) {
             throw new VersioningServiceException("specified branch has no commits");
+        }
+    }
+
+    boolean anyAffectedFiles(Set<String> files, ObjectId oldId, ObjectId newId) throws VersioningServiceException {
+        return affectedFilesBetweenCommits(oldId, newId)
+                .stream()
+                .anyMatch(diff -> files.contains(diff.getOldPath()));
+    }
+
+    List<DiffEntry> affectedFilesBetweenCommits(ObjectId oldId, ObjectId headId) throws VersioningServiceException {
+        try {
+            final ObjectReader reader = git.getRepository().newObjectReader();
+            final CanonicalTreeParser oldTreeIter = new CanonicalTreeParser();
+            oldTreeIter.reset(reader, oldId);
+            final CanonicalTreeParser newTreeIter = new CanonicalTreeParser();
+            newTreeIter.reset(reader, headId);
+            return git.diff()
+                    .setNewTree(newTreeIter)
+                    .setOldTree(oldTreeIter)
+                    .call();
+        } catch (GitAPIException|IOException e) {
+            throw new VersioningServiceException("Can't get diff", e);
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.opentable.versionedconfig;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,6 +10,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -31,6 +33,7 @@ class GitService implements VersioningService
     private final VersioningServiceProperties serviceConfig;
     private final File checkoutDir;
     private final List<File> configFiles;
+    private final Set<String> filesAsGitPaths;
 
     private final GitOperations gitOperations;
 
@@ -54,6 +57,8 @@ class GitService implements VersioningService
 
             final Stream<String> filenames = Stream.of(serviceConfig.configFiles().split(","));
             this.configFiles = filenames.map(name -> new File(checkoutDir, name)).collect(toList());
+            this.filesAsGitPaths = configFiles.stream().map(File::toString).collect(toSet());
+
 
         } catch (IOException exception) {
             throw new VersioningServiceException("Configuration initialization failed, application can't start", exception);
@@ -98,6 +103,10 @@ class GitService implements VersioningService
         final ObjectId latest = gitOperations.getCurrentHead();
         if (latest.equals(latestKnownObjectId.get()))
             return false;
+        if (gitOperations.anyAffectedFiles(filesAsGitPaths, latestKnownObjectId.get(), latest)) {
+            LOG.info("Update " + latest + " doesn't affect any paths I care about");
+            return false;
+        }
         latestKnownObjectId.set(latest);
         readConfig(streamTransformer);
         return true;
