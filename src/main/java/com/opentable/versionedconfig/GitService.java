@@ -54,14 +54,18 @@ class GitService implements VersioningService
             this.latestKnownObjectId = new AtomicReference<>(gitOperations.getCurrentHead());
 
             final String[] split = serviceConfig.configFiles().split(",");
-            final Stream<String> filenames = Stream.of(split);
-            this.configFiles = filenames.map(name -> new File(checkoutDir, name)).collect(toList());
-            this.filesAsGitPaths = Sets.newHashSet(split);
+            final List<String> trimmedFilenames = Stream.of(split).map(this::trimLeadingSlash).collect(toList());
+            this.configFiles = trimmedFilenames.stream().map(name -> new File(checkoutDir, name)).collect(toList());
+            this.filesAsGitPaths = Sets.newHashSet(trimmedFilenames);
 
 
         } catch (IOException exception) {
             throw new VersioningServiceException("Configuration initialization failed, application can't start", exception);
         }
+    }
+
+    private String trimLeadingSlash(String s) {
+        return s.startsWith("/") ? s.substring(1) : s;
     }
 
     private File getCheckoutDir(URI localRepoUri) throws VersioningServiceException
