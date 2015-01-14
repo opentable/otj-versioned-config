@@ -1,7 +1,6 @@
 package com.opentable.versionedconfig;
 
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,6 +17,7 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
 import org.eclipse.jgit.lib.ObjectId;
 
 import com.opentable.logging.Log;
@@ -30,7 +30,6 @@ class GitService implements VersioningService
 
     private static final Log LOG = Log.findLog();
 
-    private final VersioningServiceProperties serviceConfig;
     private final File checkoutDir;
     private final List<File> configFiles;
     private final Set<String> filesAsGitPaths;
@@ -42,7 +41,6 @@ class GitService implements VersioningService
     @Inject
     public GitService(VersioningServiceProperties serviceConfig) throws VersioningServiceException
     {
-        this.serviceConfig = serviceConfig;
         this.checkoutDir = getCheckoutDir(serviceConfig.localConfigRepository());
         LOG.info("initializing GitService with checkout directory of " + checkoutDir);
 
@@ -55,9 +53,10 @@ class GitService implements VersioningService
             gitOperations.checkoutBranch(serviceConfig.configBranch());
             this.latestKnownObjectId = new AtomicReference<>(gitOperations.getCurrentHead());
 
-            final Stream<String> filenames = Stream.of(serviceConfig.configFiles().split(","));
+            final String[] split = serviceConfig.configFiles().split(",");
+            final Stream<String> filenames = Stream.of(split);
             this.configFiles = filenames.map(name -> new File(checkoutDir, name)).collect(toList());
-            this.filesAsGitPaths = configFiles.stream().map(File::toString).collect(toSet());
+            this.filesAsGitPaths = Sets.newHashSet(split);
 
 
         } catch (IOException exception) {
@@ -103,7 +102,8 @@ class GitService implements VersioningService
         final ObjectId latest = gitOperations.getCurrentHead();
         if (latest.equals(latestKnownObjectId.get()))
             return false;
-        if (gitOperations.anyAffectedFiles(filesAsGitPaths, latestKnownObjectId.get(), latest)) {
+
+        if (! gitOperations.anyAffectedFiles(filesAsGitPaths, latestKnownObjectId.get(), latest)) {
             LOG.info("Update " + latest + " doesn't affect any paths I care about");
             return false;
         }

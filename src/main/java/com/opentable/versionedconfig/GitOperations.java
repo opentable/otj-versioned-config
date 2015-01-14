@@ -17,7 +17,10 @@ import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevTree;
+import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
@@ -126,20 +129,49 @@ final class GitOperations {
     boolean anyAffectedFiles(Set<String> files, ObjectId oldId, ObjectId newId) throws VersioningServiceException {
         return affectedFilesBetweenCommits(oldId, newId)
                 .stream()
-                .anyMatch(diff -> files.contains(diff.getOldPath()));
+                .anyMatch(diff -> files.contains(relevantDiffPath(diff)));
     }
 
+    private String relevantDiffPath(DiffEntry diff) {
+        if (DiffEntry.ChangeType.ADD == diff.getChangeType()) {
+            return diff.getNewPath();  // there is no old path
+        }
+        return diff.getOldPath();
+    }
+
+    /**
+     * What an atrocious API is JGit. All this garbage to get the affected files between
+     * two commits. How come I can't just call something like List&lt;File&gt; diffPaths(SHA commit1, SHA commit2)
+     * and call it a day? All this is just gross!
+     */
     List<DiffEntry> affectedFilesBetweenCommits(ObjectId oldId, ObjectId headId) throws VersioningServiceException {
         try {
-            final ObjectReader reader = git.getRepository().newObjectReader();
-            final CanonicalTreeParser oldTreeIter = new CanonicalTreeParser();
-            oldTreeIter.reset(reader, oldId);
-            final CanonicalTreeParser newTreeIter = new CanonicalTreeParser();
-            newTreeIter.reset(reader, headId);
-            return git.diff()
-                    .setNewTree(newTreeIter)
-                    .setOldTree(oldTreeIter)
+            final Repository repo = git.getRepository();
+            final RevWalk walk = new RevWalk(repo);
+
+            final CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
+            final ObjectReader oldReader = repo.newObjectReader();
+            final RevTree oldTree = walk.parseCommit(oldId).getTree();
+            try {
+                oldTreeParser.reset(oldReader, oldTree.getId());
+            } finally {
+                oldReader.release();
+            }
+
+            final CanonicalTreeParser newTreeParser = new CanonicalTreeParser();
+            final ObjectReader newReader = repo.newObjectReader();
+            final RevTree newTree = walk.parseCommit(headId).getTree();
+            try {
+                newTreeParser.reset(newReader, newTree.getId());
+            } finally {
+                newReader.release();
+            }
+
+            final List<DiffEntry> diffEntries = git.diff()
+                    .setOldTree(oldTreeParser)
+                    .setNewTree(newTreeParser)
                     .call();
+            return diffEntries;
         } catch (GitAPIException|IOException e) {
             throw new VersioningServiceException("Can't get diff", e);
         }

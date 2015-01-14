@@ -6,7 +6,9 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -16,8 +18,8 @@ import com.google.inject.Injector;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -98,25 +100,61 @@ public class GitServiceIT
         };
         final VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
 
-        blurtRandomRepoChange(checkoutSpot);
+        blurtRandomRepoChange(checkoutSpot, "someotherfile");
 
         final AtomicBoolean secondConfigRead = new AtomicBoolean(false);
         final ConfigUpdateAction action2 = stream -> {
             secondConfigRead.set(true);
         };
 
-        service.readConfig(action);
+        service.checkForUpdate(action2);
         assertEquals(true, firstConfigRead.get());
-        assertEquals(false, secondConfigRead.get());
+        assertEquals(false, secondConfigRead.get());  // no updates we care about here, sir
     }
 
-    private void blurtRandomRepoChange(File checkoutDir) throws IOException, GitAPIException {
-        LOG.info("blurting random change into repo");
-        Git git = new Git(new FileRepository(new File(checkoutDir, ".git")));
-        File touchy = new File(checkoutDir, "touched");
-        boolean p = touchy.createNewFile();
-        DirCache dirCache = git.add().addFilepattern("touched").call();
-        git.commit().setMessage("how touching");
+    @Test
+    public void filesWeCareAboutDontGetIgnored() throws IOException, VersioningServiceException, GitAPIException {
+        final AtomicBoolean firstConfigRead = new AtomicBoolean(false);
+        workFolder.create();
+        final File checkoutSpot = workFolder.newFolder("otpl-deploy");
+        final VersioningServiceProperties versioningServiceProperties = versioningServicePropertiesForTest(checkoutSpot);
+
+        final ConfigUpdateAction action = stream -> {
+            firstConfigRead.set(true);
+        };
+        final VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
+
+        blurtRandomRepoChange(checkoutSpot, "/integrationtest/mappings.cfg.tsv");
+
+        final AtomicBoolean secondConfigRead = new AtomicBoolean(false);
+        final ConfigUpdateAction action2 = stream -> {
+            secondConfigRead.set(true);
+        };
+
+        service.checkForUpdate(action2);
+        assertEquals(true, firstConfigRead.get());
+        assertEquals(true, secondConfigRead.get());  // we got updated! should have read it again!
+    }
+
+    private void blurtRandomRepoChange(File checkoutDir, String filename) throws IOException, GitAPIException {
+        final File repoFile = new File(checkoutDir, ".git");
+        final Git git = new Git(new FileRepository(repoFile));
+        final File touchy = new File(checkoutDir, filename);
+
+        LOG.info("blurting random change into repo " + repoFile);
+        LOG.info("creating/verifying " + touchy);
+
+        assertTrue(touchy.exists() || touchy.createNewFile());
+
+        try(FileWriter fw = new FileWriter(touchy, true); PrintWriter pw = new PrintWriter(fw)) {
+            LOG.info("appending some shit ");
+            pw.append("Another line");
+            pw.flush();
+        }
+        git.add().addFilepattern(".").call();
+        final RevCommit commit = git.commit().setMessage("how touching").call();
+        git.close();
+        LOG.info("commit = " + commit);
     }
 
     public VersioningServiceProperties versioningServicePropertiesForTest(File checkoutSpot)
@@ -132,7 +170,7 @@ public class GitServiceIT
         final VersioningServiceProperties versioningServiceProperties = mock(VersioningServiceProperties.class);
         Mockito.when(versioningServiceProperties.remoteConfigRepository()).thenReturn(source);
         Mockito.when(versioningServiceProperties.configBranch()).thenReturn("master");
-        Mockito.when(versioningServiceProperties.configFiles()).thenReturn("/integrationtest/mappings.cfg.tsv");
+        Mockito.when(versioningServiceProperties.configFiles()).thenReturn("integrationtest/mappings.cfg.tsv");
         Mockito.when(versioningServiceProperties.configPollingIntervalSeconds()).thenReturn(0L);
         Mockito.when(versioningServiceProperties.repoUsername()).thenReturn(githubAuthKey);
         Mockito.when(versioningServiceProperties.repoPassword()).thenReturn("x-oauth-basic");
@@ -154,7 +192,7 @@ public class GitServiceIT
         final VersioningServiceProperties versioningServiceProperties = mock(VersioningServiceProperties.class);
         Mockito.when(versioningServiceProperties.remoteConfigRepository()).thenReturn(source);
         Mockito.when(versioningServiceProperties.configBranch()).thenReturn("master");
-        Mockito.when(versioningServiceProperties.configFiles()).thenReturn("/integrationtest/mappings.cfg.tsv");
+        Mockito.when(versioningServiceProperties.configFiles()).thenReturn("integrationtest/mappings.cfg.tsv");
         Mockito.when(versioningServiceProperties.configPollingIntervalSeconds()).thenReturn(0L);
         Mockito.when(versioningServiceProperties.repoUsername()).thenReturn(githubAuthKey);
         Mockito.when(versioningServiceProperties.repoPassword()).thenReturn("x-oauth-basic");
