@@ -16,7 +16,6 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import org.eclipse.jgit.lib.ObjectId;
 
@@ -41,13 +40,10 @@ class GitService implements VersioningService
     @Inject
     public GitService(VersioningServiceProperties serviceConfig) throws VersioningServiceException
     {
-        this.checkoutDir = getCheckoutDir(serviceConfig.localConfigRepository());
+        this.checkoutDir = serviceConfig.localConfigRepository();
         LOG.info("initializing GitService with checkout directory of " + checkoutDir);
 
         try {
-            final URI localRepoUri = serviceConfig.localConfigRepository();
-
-            Preconditions.checkState("file".equals(localRepoUri.getScheme()), "local repo path must have \"file\" scheme");
             this.gitOperations = new GitOperations(serviceConfig, checkoutDir);
 
             gitOperations.checkoutBranch(serviceConfig.configBranch());
@@ -101,12 +97,13 @@ class GitService implements VersioningService
     @Override
     public boolean checkForUpdate(Consumer<InputStream> streamTransformer) throws VersioningServiceException
     {
-        if (!gitOperations.pull())
+        if (!gitOperations.pull()) {
             return false;
+        }
         final ObjectId latest = gitOperations.getCurrentHead();
-        if (latest.equals(latestKnownObjectId.get()))
+        if (latest.equals(latestKnownObjectId.get())) {
             return false;
-
+        }
         if (! gitOperations.anyAffectedFiles(filesAsGitPaths, latestKnownObjectId.get(), latest)) {
             LOG.info("Update " + latest + " doesn't affect any paths I care about");
             return false;

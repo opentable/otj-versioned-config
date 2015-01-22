@@ -199,7 +199,7 @@ public class GitServiceIT
         Mockito.when(versioningServiceProperties.repoUsername()).thenReturn(githubAuthKey);
         Mockito.when(versioningServiceProperties.repoPassword()).thenReturn("x-oauth-basic");
 
-        Mockito.when(versioningServiceProperties.localConfigRepository()).thenReturn(URI.create("file:" + checkoutSpot));
+        Mockito.when(versioningServiceProperties.localConfigRepository()).thenReturn(checkoutSpot);
         return versioningServiceProperties;
     }
 

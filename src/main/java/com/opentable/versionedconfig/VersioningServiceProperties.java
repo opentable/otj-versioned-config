@@ -1,5 +1,6 @@
 package com.opentable.versionedconfig;
 
+import java.io.File;
 import java.net.URI;
 
 import org.skife.config.Config;
@@ -29,7 +30,7 @@ public interface VersioningServiceProperties
      * @return Where the configuration should be cloned to, in the local filesystem
      */
     @Config("config.repo.local")
-    URI localConfigRepository();
+    File localConfigRepository();
 
     /**
      * @return Which configuration branch to read
