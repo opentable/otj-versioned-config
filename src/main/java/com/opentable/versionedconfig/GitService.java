@@ -74,12 +74,12 @@ class GitService implements VersioningService
     }
 
     @Override
-    public void readConfig(Consumer<InputStream> streamTransformer) throws VersioningServiceException
+    public void readConfig(Consumer<VersionedConfigSource> streamTransformer) throws VersioningServiceException
     {
         for (File configFile : configFiles) {
             LOG.info("parsing configuration file " + configFile);
             try (InputStream in = new FileInputStream(configFile)) {
-                streamTransformer.accept(in);
+                streamTransformer.accept(new VersionedConfigSource(in, configFile.toString()));
             } catch (IOException e) {
                 throw new VersioningServiceException(e);
             }
@@ -95,7 +95,7 @@ class GitService implements VersioningService
      * @return true if an update was detected and consumed
      */
     @Override
-    public boolean checkForUpdate(Consumer<InputStream> streamTransformer) throws VersioningServiceException
+    public boolean checkForUpdate(Consumer<VersionedConfigSource> streamTransformer) throws VersioningServiceException
     {
         if (!gitOperations.pull()) {
             return false;

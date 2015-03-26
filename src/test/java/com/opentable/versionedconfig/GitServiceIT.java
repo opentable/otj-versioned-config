@@ -11,10 +11,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.TypeLiteral;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -48,7 +50,7 @@ public class GitServiceIT
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
-        ConfigUpdateAction action = mock(ConfigUpdateAction.class);
+        final Consumer<VersionedConfigSource> action = mock(Consumer.class);
         VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
         assertTrue("checkout directory should exist", checkoutSpot.exists());
     }
@@ -58,7 +60,7 @@ public class GitServiceIT
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
-        ConfigUpdateAction action = mock(ConfigUpdateAction.class);
+        final Consumer<VersionedConfigSource> action = mock(Consumer.class);
         VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
         final boolean[] updateDetected = {false};
         service.checkForUpdate(update -> {
@@ -74,13 +76,13 @@ public class GitServiceIT
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
 
         final StringBuilder config = new StringBuilder();
-        ConfigUpdateAction action = stream -> {
+        final Consumer<VersionedConfigSource> action = (VersionedConfigSource source) -> {
             try {
-                config.append(IOUtils.toString(stream));
+                config.append(IOUtils.toString(source.getStream()));
             } catch (IOException e) {
             }
         };
-        VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
+        final VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
 
         service.readConfig(action);
         final String configString = config.toString();
@@ -95,17 +97,13 @@ public class GitServiceIT
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
 
-        final ConfigUpdateAction action = stream -> {
-            firstConfigRead.set(true);
-        };
+        final Consumer<VersionedConfigSource> action = source -> firstConfigRead.set(true);
         final VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
 
         blurtRandomRepoChange(checkoutSpot, "someotherfile");
 
         final AtomicBoolean secondConfigRead = new AtomicBoolean(false);
-        final ConfigUpdateAction action2 = stream -> {
-            secondConfigRead.set(true);
-        };
+        final Consumer<VersionedConfigSource> action2 = source -> secondConfigRead.set(true);
 
         service.checkForUpdate(action2);
         assertEquals(true, firstConfigRead.get());
@@ -119,17 +117,13 @@ public class GitServiceIT
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
 
-        final ConfigUpdateAction action = stream -> {
-            firstConfigRead.set(true);
-        };
+        final Consumer<VersionedConfigSource> action = stream -> firstConfigRead.set(true);
         final VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
 
         blurtRandomRepoChange(checkoutSpot, "/integrationtest/mappings.cfg.tsv");
 
         final AtomicBoolean secondConfigRead = new AtomicBoolean(false);
-        final ConfigUpdateAction action2 = stream -> {
-            secondConfigRead.set(true);
-        };
+        final Consumer<VersionedConfigSource> action2 = stream -> secondConfigRead.set(true);
 
         service.checkForUpdate(action2);
         assertEquals(true, firstConfigRead.get());
@@ -144,17 +138,13 @@ public class GitServiceIT
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
         Mockito.when(versioningServiceProperties.configFiles()).thenReturn("/integrationtest/mappings.cfg.tsv");
 
-        final ConfigUpdateAction action = stream -> {
-            firstConfigRead.set(true);
-        };
+        final Consumer<VersionedConfigSource> action = stream -> firstConfigRead.set(true);
         final VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
 
         blurtRandomRepoChange(checkoutSpot, "/integrationtest/mappings.cfg.tsv");
 
         final AtomicBoolean secondConfigRead = new AtomicBoolean(false);
-        final ConfigUpdateAction action2 = stream -> {
-            secondConfigRead.set(true);
-        };
+        final Consumer<VersionedConfigSource> action2 = stream -> secondConfigRead.set(true);
 
         service.checkForUpdate(action2);
         assertEquals(true, firstConfigRead.get());
@@ -172,7 +162,7 @@ public class GitServiceIT
         assertTrue(touchy.exists() || touchy.createNewFile());
 
         try(FileWriter fw = new FileWriter(touchy, true); PrintWriter pw = new PrintWriter(fw)) {
-            LOG.info("appending some shit ");
+            LOG.info("appending some stuff ");
             pw.append("Another line");
             pw.flush();
         }
@@ -203,7 +193,7 @@ public class GitServiceIT
         return versioningServiceProperties;
     }
 
-    private Injector injectorForTest(final VersioningServiceProperties versioningServiceProperties, ConfigUpdateAction action)
+    private Injector injectorForTest(final VersioningServiceProperties versioningServiceProperties, Consumer<VersionedConfigSource> action)
     {
         return Guice.createInjector(new AbstractModule()
         {
@@ -214,7 +204,7 @@ public class GitServiceIT
                 install(new VersionedConfigModule());
                 //install
                 bind(Config.class).toInstance(Config.getEmptyConfig());
-                bind(ConfigUpdateAction.class).toInstance(action);
+                bind(new TypeLiteral<Consumer<VersionedConfigSource>>(){}).toInstance(action);
                 bind(VersioningServiceProperties.class).toInstance(versioningServiceProperties);
             }
         });

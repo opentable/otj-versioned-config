@@ -5,6 +5,7 @@ import java.io.Closeable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import javax.inject.Inject;
 
@@ -24,12 +25,12 @@ public class ConfigPollingService implements Closeable
             new ThreadFactoryBuilder().setNameFormat("config-update").build()
     );
     private final VersioningService versioning;
-    private final ConfigUpdateAction onUpdate;
+    private final Consumer<VersionedConfigSource> onUpdate;
 
     @Inject
     public ConfigPollingService(VersioningService versioning,
             VersioningServiceProperties runtimeProperties,
-            ConfigUpdateAction onUpdate) throws VersioningServiceException
+            Consumer<VersionedConfigSource> onUpdate) throws VersioningServiceException
     {
         LOG.info("ConfigUpdateService initializing");
         this.versioning = versioning;
