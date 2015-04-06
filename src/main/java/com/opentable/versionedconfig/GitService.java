@@ -105,7 +105,7 @@ class GitService implements VersioningService
             return false;
         }
         if (! gitOperations.anyAffectedFiles(filesAsGitPaths, latestKnownObjectId.get(), latest)) {
-            LOG.info("Update " + latest + " doesn't affect any paths I care about");
+            LOG.debug("Update " + latest + " doesn't affect any paths I care about");
             return false;
         }
         latestKnownObjectId.set(latest);
