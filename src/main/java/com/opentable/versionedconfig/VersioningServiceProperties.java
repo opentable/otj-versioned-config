@@ -2,6 +2,7 @@ package com.opentable.versionedconfig;
 
 import java.io.File;
 import java.net.URI;
+import java.util.List;
 
 import org.skife.config.Config;
 
@@ -42,7 +43,7 @@ public interface VersioningServiceProperties
      * @return Which configuration files(s) to read, comma-separated if more than one
      */
     @Config("config.repo.file")
-    String configFiles();
+    List<String> configFiles();
 
     /**
      * @return How often to poll for updates

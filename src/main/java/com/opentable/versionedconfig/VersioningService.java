@@ -1,9 +1,9 @@
 package com.opentable.versionedconfig;
 
+import java.io.File;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public interface VersioningService {
-    void readConfig(Consumer<VersionedConfigSource> configEater) throws VersioningServiceException;
-
-    boolean checkForUpdate(Consumer<VersionedConfigSource> configEater) throws VersioningServiceException;
+    Set<File> checkForUpdate(Consumer<ConfigUpdate> configEater) throws VersioningServiceException;
 }

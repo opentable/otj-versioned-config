@@ -1,12 +1,15 @@
 package com.opentable.versionedconfig;
 
 
+import static java.util.stream.Collectors.toSet;
+
 import java.io.Closeable;
+import java.io.File;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-
 import javax.inject.Inject;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -18,27 +21,28 @@ import com.opentable.logging.Log;
  */
 public class ConfigPollingService implements Closeable
 {
-
     private static final Log LOG = Log.findLog();
 
     private final ScheduledExecutorService updateExecutor = Executors.newScheduledThreadPool(1,
             new ThreadFactoryBuilder().setNameFormat("config-update").build()
     );
     private final VersioningService versioning;
-    private final Consumer<VersionedConfigSource> onUpdate;
+    private final Consumer<ConfigUpdate> onUpdate;
 
     @Inject
     public ConfigPollingService(VersioningService versioning,
             VersioningServiceProperties runtimeProperties,
-            Consumer<VersionedConfigSource> onUpdate) throws VersioningServiceException
+            Consumer<ConfigUpdate> onUpdate) throws VersioningServiceException
     {
         LOG.info("ConfigUpdateService initializing");
         this.versioning = versioning;
         this.onUpdate = onUpdate;
 
         LOG.info("ConfigUpdateService seeding initial configuration for FrontDoorService");
-        versioning.readConfig(onUpdate);
-
+        final Set<File> pathsOfInterest = runtimeProperties.configFiles().stream()
+                .map(filename -> new File(runtimeProperties.localConfigRepository(), filename))
+                .collect(toSet());
+        onUpdate.accept(new ConfigUpdate(pathsOfInterest));
         if (runtimeProperties.configPollingIntervalSeconds() > 0) {
             updateExecutor.scheduleAtFixedRate(this::update,
                     runtimeProperties.configPollingIntervalSeconds(),
@@ -59,7 +63,6 @@ public class ConfigPollingService implements Closeable
     {
         try {
             versioning.checkForUpdate(onUpdate);
-
         } catch (VersioningServiceException error) {
             LOG.error(error, "Could not reconfigure service! Serious configuration error!");
             // TODO put some kind of notification in JMX here.

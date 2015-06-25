@@ -1,5 +1,7 @@
 package com.opentable.versionedconfig;
 
+import static java.util.stream.Collectors.toSet;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -9,7 +11,6 @@ import java.util.Set;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -30,14 +31,10 @@ import com.opentable.logging.Log;
 
 final class GitOperations {
     private static final Log LOG = Log.findLog();
-    private final VersioningServiceProperties config;
-    private final File checkoutDir;
     private final Git git;
     private final CredentialsProvider credentials;
 
     GitOperations(final VersioningServiceProperties serviceConfig, File checkoutDir) throws VersioningServiceException, IOException {
-        this.config = serviceConfig;
-        this.checkoutDir = checkoutDir;
         this.credentials = new UsernamePasswordCredentialsProvider(serviceConfig.repoUsername(), serviceConfig.repoPassword());
         this.git = openRepo(serviceConfig, checkoutDir);
     }
@@ -134,10 +131,11 @@ final class GitOperations {
         }
     }
 
-    boolean anyAffectedFiles(Set<String> files, ObjectId oldId, ObjectId newId) throws VersioningServiceException {
-        return affectedFilesBetweenCommits(oldId, newId)
-                .stream()
-                .anyMatch(diff -> files.contains(relevantDiffPath(diff)));
+    Set<String> affectedFiles(Set<String> allFileNames, ObjectId oldId, ObjectId newId) throws VersioningServiceException {
+        return affectedFilesBetweenCommits(oldId, newId).stream()
+                .map(this::relevantDiffPath)
+                .filter(allFileNames::contains)
+                .collect(toSet());
     }
 
     private String relevantDiffPath(DiffEntry diff) {

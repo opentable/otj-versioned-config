@@ -2,7 +2,7 @@ package com.opentable.versionedconfig;
 
 import java.io.IOException;
 
-public class VersioningServiceException extends Exception
+public class VersioningServiceException extends RuntimeException
 {
     public VersioningServiceException(String message, Throwable cause)
     {
