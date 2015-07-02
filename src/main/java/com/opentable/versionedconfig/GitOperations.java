@@ -39,6 +39,11 @@ final class GitOperations {
         this.config = serviceConfig;
         this.checkoutDir = checkoutDir;
         this.credentials = new UsernamePasswordCredentialsProvider(serviceConfig.repoUsername(), serviceConfig.repoPassword());
+        this.git = openRepo(serviceConfig, checkoutDir);
+    }
+
+    private Git openRepo(final VersioningServiceProperties serviceConfig, File checkoutDir)
+            throws VersioningServiceException, IOException {
         if (!checkoutDir.exists() || !checkoutDir.isDirectory() || checkoutDir.list().length <= 0) {
             LOG.info("checkout directory %s does not exist, cloning", checkoutDir);
             final String cloneSource = cloningUriToGitArgument(serviceConfig.remoteConfigRepository());
@@ -48,7 +53,7 @@ final class GitOperations {
                 LOG.info("created checkout directory");
             }
             try {
-                this.git = Git.cloneRepository()
+                return Git.cloneRepository()
                         .setBare(false)
                         .setCredentialsProvider(credentials)
                         .setBranch(serviceConfig.configBranch())
@@ -59,7 +64,7 @@ final class GitOperations {
                 throw new VersioningServiceException("Could not clone repo", ioe);
             }
         } else {
-            this.git =   new Git(new FileRepository(new File(checkoutDir, ".git")));
+            return new Git(new FileRepository(new File(checkoutDir, ".git")));
         }
     }
 
@@ -76,7 +81,7 @@ final class GitOperations {
 
     @VisibleForTesting
     void checkoutBranch(String branch) throws VersioningServiceException {
-        LOG.info("checking out branch " + branch);
+        LOG.info("checking out branch %s", branch);
         try {
             git.checkout().setName(branch).call();
         } catch (GitAPIException cause) {
