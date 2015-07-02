@@ -44,27 +44,29 @@ final class GitOperations {
 
     private Git openRepo(final VersioningServiceProperties serviceConfig, File checkoutDir)
             throws VersioningServiceException, IOException {
-        if (!checkoutDir.exists() || !checkoutDir.isDirectory() || checkoutDir.list().length <= 0) {
-            LOG.info("checkout directory %s does not exist, cloning", checkoutDir);
-            final String cloneSource = cloningUriToGitArgument(serviceConfig.remoteConfigRepository());
-            LOG.info("cloning %s to %s", cloneSource, checkoutDir);
+        if (checkoutDir.exists() && checkoutDir.isDirectory()) {
+            final String[] entries = checkoutDir.list();
+            if (entries != null && entries.length > 0) {
+                return new Git(new FileRepository(new File(checkoutDir, ".git")));
+            }
+        }
+        LOG.info("checkout directory %s does not exist, cloning", checkoutDir);
+        final String cloneSource = cloningUriToGitArgument(serviceConfig.remoteConfigRepository());
+        LOG.info("cloning %s to %s", cloneSource, checkoutDir);
 
-            if (checkoutDir.mkdirs()) {
-                LOG.info("created checkout directory");
-            }
-            try {
-                return Git.cloneRepository()
-                        .setBare(false)
-                        .setCredentialsProvider(credentials)
-                        .setBranch(serviceConfig.configBranch())
-                        .setDirectory(checkoutDir)
-                        .setURI(serviceConfig.remoteConfigRepository().toString())
-                        .call();
-            } catch(GitAPIException ioe) {
-                throw new VersioningServiceException("Could not clone repo", ioe);
-            }
-        } else {
-            return new Git(new FileRepository(new File(checkoutDir, ".git")));
+        if (checkoutDir.mkdirs()) {
+            LOG.info("created checkout directory");
+        }
+        try {
+            return Git.cloneRepository()
+                    .setBare(false)
+                    .setCredentialsProvider(credentials)
+                    .setBranch(serviceConfig.configBranch())
+                    .setDirectory(checkoutDir)
+                    .setURI(serviceConfig.remoteConfigRepository().toString())
+                    .call();
+        } catch(GitAPIException ioe) {
+            throw new VersioningServiceException("Could not clone repo", ioe);
         }
     }
 
