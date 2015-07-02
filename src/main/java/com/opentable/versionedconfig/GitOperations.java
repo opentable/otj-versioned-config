@@ -9,6 +9,7 @@ import java.util.Set;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -39,9 +40,9 @@ final class GitOperations {
         this.checkoutDir = checkoutDir;
         this.credentials = new UsernamePasswordCredentialsProvider(serviceConfig.repoUsername(), serviceConfig.repoPassword());
         if (!checkoutDir.exists() || !checkoutDir.isDirectory() || checkoutDir.list().length <= 0) {
-            LOG.info("checkout directory " + checkoutDir + " does not exist, cloning");
+            LOG.info("checkout directory %s does not exist, cloning", checkoutDir);
             final String cloneSource = cloningUriToGitArgument(serviceConfig.remoteConfigRepository());
-            LOG.info("cloning " + cloneSource + " to " + checkoutDir);
+            LOG.info("cloning %s to %s", cloneSource, checkoutDir);
 
             if (checkoutDir.mkdirs()) {
                 LOG.info("created checkout directory");
