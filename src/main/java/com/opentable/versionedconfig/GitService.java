@@ -82,7 +82,7 @@ class GitService implements VersioningService
      * @return set of affected files, if any, or empty set.
      */
     @Override
-    public Set<File> checkForUpdate(Consumer<ConfigUpdate> updateConsumer) throws VersioningServiceException
+    public Set<File> checkForUpdate(Consumer<VersionedConfigUpdate> updateConsumer) throws VersioningServiceException
     {
         if (!gitOperations.pull()) {
             return NO_AFFECTED_FILES;
@@ -99,7 +99,7 @@ class GitService implements VersioningService
             LOG.debug("Update " + latest + " doesn't affect any paths I care about");
             return NO_AFFECTED_FILES;
         }
-        updateConsumer.accept(new ConfigUpdate(affectedFiles));
+        updateConsumer.accept(new VersionedConfigUpdate(affectedFiles));
         latestKnownObjectId.set(latest);
         return affectedFiles;
     }

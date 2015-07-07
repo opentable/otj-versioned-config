@@ -5,5 +5,5 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 public interface VersioningService {
-    Set<File> checkForUpdate(Consumer<ConfigUpdate> configEater) throws VersioningServiceException;
+    Set<File> checkForUpdate(Consumer<VersionedConfigUpdate> configEater) throws VersioningServiceException;
 }

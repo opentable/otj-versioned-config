@@ -3,10 +3,10 @@ package com.opentable.versionedconfig;
 import java.io.File;
 import java.util.Set;
 
-public final class ConfigUpdate {
+public final class VersionedConfigUpdate {
     private final Set<File> alteredPaths;
 
-    public ConfigUpdate(Set<File> alteredPaths) {
+    public VersionedConfigUpdate(Set<File> alteredPaths) {
         this.alteredPaths = alteredPaths;
     }
 

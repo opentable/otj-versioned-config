@@ -27,12 +27,12 @@ public class ConfigPollingService implements Closeable
             new ThreadFactoryBuilder().setNameFormat("config-update").build()
     );
     private final VersioningService versioning;
-    private final Consumer<ConfigUpdate> onUpdate;
+    private final Consumer<VersionedConfigUpdate> onUpdate;
 
     @Inject
     public ConfigPollingService(VersioningService versioning,
             VersioningServiceProperties runtimeProperties,
-            Consumer<ConfigUpdate> onUpdate) throws VersioningServiceException
+            Consumer<VersionedConfigUpdate> onUpdate) throws VersioningServiceException
     {
         LOG.info("ConfigUpdateService initializing");
         this.versioning = versioning;
@@ -42,7 +42,7 @@ public class ConfigPollingService implements Closeable
         final Set<File> pathsOfInterest = runtimeProperties.configFiles().stream()
                 .map(filename -> new File(runtimeProperties.localConfigRepository(), filename))
                 .collect(toSet());
-        onUpdate.accept(new ConfigUpdate(pathsOfInterest));
+        onUpdate.accept(new VersionedConfigUpdate(pathsOfInterest));
         if (runtimeProperties.configPollingIntervalSeconds() > 0) {
             updateExecutor.scheduleAtFixedRate(this::update,
                     runtimeProperties.configPollingIntervalSeconds(),
