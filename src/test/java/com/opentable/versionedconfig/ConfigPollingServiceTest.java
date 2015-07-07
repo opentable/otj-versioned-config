@@ -24,15 +24,11 @@ public class ConfigPollingServiceTest {
     @Test
     public void constructorProvidesInitialUpdate() {
         final VersioningService versioning = mock(VersioningService.class);
-        final VersioningServiceProperties properties = mock(VersioningServiceProperties.class);
         final Consumer<VersionedConfigUpdate> receiver = mock(Consumer.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
 
         final long delaySec = 10;
-        when(properties.configPollingIntervalSeconds()).thenReturn(delaySec);
-        when(properties.localConfigRepository()).thenReturn(new File("/tmp/stuff"));
-        when(properties.configFiles()).thenReturn(ImmutableList.of("items.txt","things.txt"));
-        when(properties.configPollingIntervalSeconds()).thenReturn(delaySec);
+        final VersioningServiceProperties properties = createVersioningServiceProperties(delaySec);
 
         final ConfigPollingService pollingService = new ConfigPollingService(versioning, properties, receiver, executor);
 
@@ -47,12 +43,11 @@ public class ConfigPollingServiceTest {
     @Test
     public void constructorSchedulesUpdates() {
         final VersioningService versioning = mock(VersioningService.class);
-        final VersioningServiceProperties properties = mock(VersioningServiceProperties.class);
-        final Consumer<VersionedConfigUpdate> receiver = mock(Consumer.class);
+        final Consumer<VersionedConfigUpdate> receiver = (x) -> {};
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
 
         final long delaySec = 10;
-        when(properties.configPollingIntervalSeconds()).thenReturn(delaySec);
+        final VersioningServiceProperties properties = createVersioningServiceProperties(delaySec);
         final ConfigPollingService pollingService = new ConfigPollingService(versioning, properties, receiver, executor);
 
         verify(executor).scheduleAtFixedRate(any(), eq(delaySec), eq(delaySec), eq(TimeUnit.SECONDS));
@@ -61,18 +56,26 @@ public class ConfigPollingServiceTest {
     @Test
     public void scheduledUpdatesFeedConsumer() {
         final VersioningService versioning = mock(VersioningService.class);
-        final VersioningServiceProperties properties = mock(VersioningServiceProperties.class);
         final Consumer<VersionedConfigUpdate> receiver = mock(Consumer.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
 
         final long delaySec = 10;
-        when(properties.configPollingIntervalSeconds()).thenReturn(delaySec);
+        final VersioningServiceProperties properties = createVersioningServiceProperties(delaySec);
         final ConfigPollingService pollingService = new ConfigPollingService(versioning, properties, receiver, executor);
 
         // do what executor does
         pollingService.update();
 
         verify(receiver, times(2)).accept(any());
+    }
+
+    private VersioningServiceProperties createVersioningServiceProperties(long delaySec) {
+        final VersioningServiceProperties properties = mock(VersioningServiceProperties.class);
+        when(properties.configPollingIntervalSeconds()).thenReturn(delaySec);
+        when(properties.localConfigRepository()).thenReturn(new File("/tmp/stuff"));
+        when(properties.configFiles()).thenReturn(ImmutableList.of("items.txt", "things.txt"));
+        when(properties.configPollingIntervalSeconds()).thenReturn(delaySec);
+        return properties;
     }
 
 }
