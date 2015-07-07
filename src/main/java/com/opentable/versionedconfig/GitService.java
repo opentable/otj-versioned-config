@@ -11,7 +11,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import javax.inject.Inject;
 
 import com.google.common.collect.ImmutableSet;
@@ -76,12 +75,13 @@ class GitService implements VersioningService
      * Look and see if the latest SHA on the config directory in the config repo is different to the latest
      * we know about. If it is, grab a reference to an input stream of the mapping file and feed it to the
      * consumer.
+     * <p>
+     * The first time we are called we should just return an update with all files.
      *
-     * @param updateConsumer a consumer to process any of the input files for a detected update
      * @return set of affected files, if any, or empty set.
      */
     @Override
-    public VersionedConfigUpdate checkForUpdate(Consumer<VersionedConfigUpdate> updateConsumer) throws VersioningServiceException
+    public VersionedConfigUpdate checkForUpdate() throws VersioningServiceException
     {
         if (!gitOperations.pull()) {
             return NO_AFFECTED_FILES;
@@ -99,7 +99,6 @@ class GitService implements VersioningService
             return NO_AFFECTED_FILES;
         }
         final VersionedConfigUpdate update = new VersionedConfigUpdate(ImmutableSet.copyOf(affectedFiles));
-        updateConsumer.accept(update);
         latestKnownObjectId.set(latest);
         return update;
     }

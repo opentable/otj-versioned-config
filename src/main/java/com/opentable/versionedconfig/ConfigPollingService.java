@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import javax.inject.Inject;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
@@ -24,18 +25,27 @@ public class ConfigPollingService implements Closeable
 {
     private static final Log LOG = Log.findLog();
 
-    private final ScheduledExecutorService updateExecutor = Executors.newScheduledThreadPool(1,
-            new ThreadFactoryBuilder().setNameFormat("config-update").build()
-    );
     private final VersioningService versioning;
     private final Consumer<VersionedConfigUpdate> onUpdate;
+    private final ScheduledExecutorService updateExecutor;
 
     @Inject
     public ConfigPollingService(VersioningService versioning,
             VersioningServiceProperties runtimeProperties,
             Consumer<VersionedConfigUpdate> onUpdate) throws VersioningServiceException
     {
+        this(versioning, runtimeProperties, onUpdate, Executors.newScheduledThreadPool(1,
+                new ThreadFactoryBuilder().setNameFormat("config-update").build()
+        ));
+    }
+
+    @VisibleForTesting
+    ConfigPollingService(VersioningService versioning,
+            VersioningServiceProperties runtimeProperties,
+            Consumer<VersionedConfigUpdate> onUpdate,
+            ScheduledExecutorService updateExecutor) {
         LOG.info("ConfigUpdateService initializing");
+        this.updateExecutor = updateExecutor;
         this.versioning = versioning;
         this.onUpdate = onUpdate;
 
@@ -64,7 +74,7 @@ public class ConfigPollingService implements Closeable
     public void update()
     {
         try {
-            versioning.checkForUpdate(onUpdate);
+            onUpdate.accept(versioning.checkForUpdate());
         } catch (VersioningServiceException error) {
             LOG.error(error, "Could not reconfigure service! Serious configuration error!");
             // TODO put some kind of notification in JMX here.

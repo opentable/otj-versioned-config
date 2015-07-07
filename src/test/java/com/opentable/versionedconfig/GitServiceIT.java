@@ -1,7 +1,7 @@
 package com.opentable.versionedconfig;
 
 import static com.google.common.collect.ImmutableList.of;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -11,15 +11,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.TypeLiteral;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
@@ -29,7 +21,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 
-import com.opentable.config.Config;
 import com.opentable.logging.Log;
 
 /**
@@ -52,8 +43,7 @@ public class GitServiceIT
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
-        final Consumer<VersionedConfigUpdate> action = mock(Consumer.class);
-        VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
+        final VersioningService service = new GitService(versioningServiceProperties);
         assertTrue("checkout directory should exist", checkoutSpot.exists());
     }
 
@@ -62,12 +52,8 @@ public class GitServiceIT
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
-        final Consumer<VersionedConfigUpdate> action = mock(Consumer.class);
-        VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
-        final boolean[] updateDetected = {false};
-        service.checkForUpdate(update -> {
-            updateDetected[0] = true;
-        });
+        final VersioningService service = new GitService(versioningServiceProperties);
+        service.checkForUpdate();
     }
 
     @Test
@@ -77,74 +63,60 @@ public class GitServiceIT
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
 
-        Set<File> paths = new HashSet<>();
-        final Consumer<VersionedConfigUpdate> action = update -> paths.addAll(update.getAlteredPaths());
+        final VersioningService service = new GitService(versioningServiceProperties);
 
-        final VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
-
-        service.checkForUpdate(action);
-        assertTrue(!paths.isEmpty());
+        final VersionedConfigUpdate update = service.checkForUpdate();
+        assertTrue(update.isEmpty());
+        // this is right after cloning so of course nothing has changed when we pull
     }
 
     @Test
     public void ignoredPathsDontDoAnything() throws IOException, VersioningServiceException, GitAPIException {
-        final AtomicBoolean firstConfigRead = new AtomicBoolean(false);
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
 
-        final Consumer<VersionedConfigUpdate> action = source -> firstConfigRead.set(true);
-        final VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
+        final VersioningService service = new GitService(versioningServiceProperties);
+        final VersionedConfigUpdate firstUpdate = service.checkForUpdate();
 
         blurtRandomRepoChange(checkoutSpot, "someotherfile");
 
-        final AtomicBoolean secondConfigRead = new AtomicBoolean(false);
-        final Consumer<VersionedConfigUpdate> action2 = source -> secondConfigRead.set(true);
-
-        service.checkForUpdate(action2);
-        assertEquals(true, firstConfigRead.get());
-        assertEquals(false, secondConfigRead.get());  // no updates we care about here, sir
+        final VersionedConfigUpdate secondUpdate = service.checkForUpdate();
+        assertTrue(firstUpdate.isEmpty());
+        assertTrue(secondUpdate.isEmpty());  // no updates we care about here, sir
     }
 
     @Test
     public void filesWeCareAboutDontGetIgnored() throws IOException, VersioningServiceException, GitAPIException {
-        final AtomicBoolean firstConfigRead = new AtomicBoolean(false);
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
 
-        final Consumer<VersionedConfigUpdate> action = update -> firstConfigRead.set(true);
-        final VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
+        final VersioningService service = new GitService(versioningServiceProperties);
+        final VersionedConfigUpdate firstUpdate = service.checkForUpdate();
 
         blurtRandomRepoChange(checkoutSpot, "/integrationtest/mappings.cfg.tsv");
 
-        final AtomicBoolean secondConfigRead = new AtomicBoolean(false);
-        final Consumer<VersionedConfigUpdate> action2 = update -> secondConfigRead.set(true);
-
-        service.checkForUpdate(action2);
-        assertEquals(true, firstConfigRead.get());
-        assertEquals(true, secondConfigRead.get());  // we got updated! should have read it again!
+        final VersionedConfigUpdate secondUpdate = service.checkForUpdate();
+        assertTrue(firstUpdate.isEmpty());
+        assertFalse(secondUpdate.isEmpty());
     }
 
     @Test
     public void filesWeCareAboutDontGetIgnoredEvenIfPrefixedWithSlashes() throws IOException, VersioningServiceException, GitAPIException {
-        final AtomicBoolean firstConfigRead = new AtomicBoolean(false);
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
         Mockito.when(versioningServiceProperties.configFiles()).thenReturn(of("/integrationtest/mappings.cfg.tsv"));
 
-        final Consumer<VersionedConfigUpdate> action = stream -> firstConfigRead.set(true);
-        final VersioningService service = injectorForTest(versioningServiceProperties, action).getInstance(VersioningService.class);
+        final VersioningService service = new GitService(versioningServiceProperties);
+        final VersionedConfigUpdate firstUpdate = service.checkForUpdate();
 
         blurtRandomRepoChange(checkoutSpot, "/integrationtest/mappings.cfg.tsv");
 
-        final AtomicBoolean secondConfigRead = new AtomicBoolean(false);
-        final Consumer<VersionedConfigUpdate> action2 = stream -> secondConfigRead.set(true);
-
-        service.checkForUpdate(action2);
-        assertEquals(true, firstConfigRead.get());
-        assertEquals(true, secondConfigRead.get());  // we got updated! should have read it again!
+        final VersionedConfigUpdate secondUpdate = service.checkForUpdate();
+        assertTrue(firstUpdate.isEmpty());
+        assertFalse(secondUpdate.isEmpty());
     }
 
     private void blurtRandomRepoChange(File checkoutDir, String filename) throws IOException, GitAPIException {
@@ -186,22 +158,5 @@ public class GitServiceIT
 
         Mockito.when(versioningServiceProperties.localConfigRepository()).thenReturn(checkoutSpot);
         return versioningServiceProperties;
-    }
-
-    private Injector injectorForTest(final VersioningServiceProperties versioningServiceProperties, Consumer<VersionedConfigUpdate> action)
-    {
-        return Guice.createInjector(new AbstractModule()
-        {
-
-            @Override
-            public void configure()
-            {
-                install(new VersionedConfigModule());
-                //install
-                bind(Config.class).toInstance(Config.getEmptyConfig());
-                bind(new TypeLiteral<Consumer<VersionedConfigUpdate>>(){}).toInstance(action);
-                bind(VersioningServiceProperties.class).toInstance(versioningServiceProperties);
-            }
-        });
     }
 }

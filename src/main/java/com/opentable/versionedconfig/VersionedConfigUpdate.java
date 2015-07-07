@@ -15,5 +15,9 @@ public final class VersionedConfigUpdate {
         return alteredPaths;
     }
 
+    public boolean isEmpty() {
+        return alteredPaths.isEmpty();
+    }
+
     static final VersionedConfigUpdate NO_AFFECTED_FILES = new VersionedConfigUpdate(ImmutableSet.<File>of());
 }
