@@ -1,16 +1,19 @@
 package com.opentable.versionedconfig;
 
 import java.io.File;
-import java.util.Set;
+
+import com.google.common.collect.ImmutableSet;
 
 public final class VersionedConfigUpdate {
-    private final Set<File> alteredPaths;
+    private final ImmutableSet<File> alteredPaths;
 
-    public VersionedConfigUpdate(Set<File> alteredPaths) {
+    public VersionedConfigUpdate(ImmutableSet<File> alteredPaths) {
         this.alteredPaths = alteredPaths;
     }
 
-    public Set<File> getAlteredPaths() {
+    public ImmutableSet<File> getAlteredPaths() {
         return alteredPaths;
     }
+
+    static final VersionedConfigUpdate NO_AFFECTED_FILES = new VersionedConfigUpdate(ImmutableSet.<File>of());
 }

@@ -1,5 +1,6 @@
 package com.opentable.versionedconfig;
 
+import static com.opentable.versionedconfig.VersionedConfigUpdate.NO_AFFECTED_FILES;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
@@ -71,8 +72,6 @@ class GitService implements VersioningService
         }
     }
 
-    private static final Set<File> NO_AFFECTED_FILES = ImmutableSet.of();
-
     /**
      * Look and see if the latest SHA on the config directory in the config repo is different to the latest
      * we know about. If it is, grab a reference to an input stream of the mapping file and feed it to the
@@ -82,7 +81,7 @@ class GitService implements VersioningService
      * @return set of affected files, if any, or empty set.
      */
     @Override
-    public Set<File> checkForUpdate(Consumer<VersionedConfigUpdate> updateConsumer) throws VersioningServiceException
+    public VersionedConfigUpdate checkForUpdate(Consumer<VersionedConfigUpdate> updateConsumer) throws VersioningServiceException
     {
         if (!gitOperations.pull()) {
             return NO_AFFECTED_FILES;
@@ -99,9 +98,10 @@ class GitService implements VersioningService
             LOG.debug("Update " + latest + " doesn't affect any paths I care about");
             return NO_AFFECTED_FILES;
         }
-        updateConsumer.accept(new VersionedConfigUpdate(affectedFiles));
+        final VersionedConfigUpdate update = new VersionedConfigUpdate(ImmutableSet.copyOf(affectedFiles));
+        updateConsumer.accept(update);
         latestKnownObjectId.set(latest);
-        return affectedFiles;
+        return update;
     }
 
     File fileForPath(String path) throws VersioningServiceException {

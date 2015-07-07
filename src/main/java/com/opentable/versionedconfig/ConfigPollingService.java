@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import javax.inject.Inject;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import com.opentable.logging.Log;
@@ -42,7 +43,8 @@ public class ConfigPollingService implements Closeable
         final Set<File> pathsOfInterest = runtimeProperties.configFiles().stream()
                 .map(filename -> new File(runtimeProperties.localConfigRepository(), filename))
                 .collect(toSet());
-        onUpdate.accept(new VersionedConfigUpdate(pathsOfInterest));
+        final VersionedConfigUpdate initialUpdate = new VersionedConfigUpdate(ImmutableSet.copyOf(pathsOfInterest));
+        onUpdate.accept(initialUpdate);
         if (runtimeProperties.configPollingIntervalSeconds() > 0) {
             updateExecutor.scheduleAtFixedRate(this::update,
                     runtimeProperties.configPollingIntervalSeconds(),

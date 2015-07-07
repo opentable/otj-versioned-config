@@ -11,6 +11,7 @@ import java.util.Set;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -131,11 +132,12 @@ final class GitOperations {
         }
     }
 
-    Set<String> affectedFiles(Set<String> allFileNames, ObjectId oldId, ObjectId newId) throws VersioningServiceException {
-        return affectedFilesBetweenCommits(oldId, newId).stream()
+    ImmutableSet<String> affectedFiles(Set<String> allFileNames, ObjectId oldId, ObjectId newId) throws VersioningServiceException {
+        final Set<String> items = affectedFilesBetweenCommits(oldId, newId).stream()
                 .map(this::relevantDiffPath)
                 .filter(allFileNames::contains)
                 .collect(toSet());
+        return ImmutableSet.copyOf(items);
     }
 
     private String relevantDiffPath(DiffEntry diff) {
