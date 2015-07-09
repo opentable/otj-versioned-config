@@ -11,6 +11,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
@@ -21,6 +22,7 @@ import com.opentable.logging.Log;
 /**
  * This service periodically checks for configuration updates and applies them.
  */
+@Singleton
 public class ConfigPollingService implements Closeable
 {
     private static final Log LOG = Log.findLog();
