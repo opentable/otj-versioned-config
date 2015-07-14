@@ -1,5 +1,10 @@
 package com.opentable.versionedconfig;
 
+import java.nio.file.Path;
+import java.util.Optional;
+
 public interface VersioningService {
-    VersionedConfigUpdate checkForUpdate() throws VersioningServiceException;
+    Optional<VersionedConfigUpdate> checkForUpdate() throws VersioningServiceException;
+
+    Path getCheckoutDirectory();
 }

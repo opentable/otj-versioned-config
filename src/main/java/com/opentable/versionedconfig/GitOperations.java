@@ -5,6 +5,8 @@ import static java.util.stream.Collectors.toSet;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -35,32 +37,34 @@ final class GitOperations {
     private final Git git;
     private final CredentialsProvider credentials;
 
-    GitOperations(final VersioningServiceProperties serviceConfig, File checkoutDir) throws VersioningServiceException, IOException {
+    GitOperations(final VersioningServiceProperties serviceConfig, Path checkoutDir) throws VersioningServiceException, IOException {
         this.credentials = new UsernamePasswordCredentialsProvider(serviceConfig.repoUsername(), serviceConfig.repoPassword());
         this.git = openRepo(serviceConfig, checkoutDir);
     }
 
-    private Git openRepo(final VersioningServiceProperties serviceConfig, File checkoutDir)
+    private Git openRepo(final VersioningServiceProperties serviceConfig, Path checkoutDir)
             throws VersioningServiceException, IOException {
-        if (checkoutDir.exists() && checkoutDir.isDirectory()) {
-            final String[] entries = checkoutDir.list();
-            if (entries != null && entries.length > 0) {
-                return new Git(new FileRepository(new File(checkoutDir, ".git")));
+        if (Files.exists(checkoutDir) && Files.isDirectory(checkoutDir)) {
+            LOG.info("checkout directory %s already exists", checkoutDir);
+            final boolean dirNotEmpty = Files.newDirectoryStream(checkoutDir).iterator().hasNext();
+            if (dirNotEmpty) {
+                return new Git(new FileRepository(checkoutDir.resolve(".git").toFile()));
+            } else {
+                LOG.info("checkout directory %s exists but is empty, can reuse", checkoutDir);
             }
+        } else {
+            LOG.info("checkout directory %s does not yet exist", checkoutDir);
         }
-        LOG.info("checkout directory %s does not exist, cloning", checkoutDir);
+        LOG.info("cloning to checkout directory", checkoutDir);
         final String cloneSource = cloningUriToGitArgument(serviceConfig.remoteConfigRepository());
         LOG.info("cloning %s to %s", cloneSource, checkoutDir);
 
-        if (checkoutDir.mkdirs()) {
-            LOG.info("created checkout directory");
-        }
         try {
             return Git.cloneRepository()
                     .setBare(false)
                     .setCredentialsProvider(credentials)
                     .setBranch(serviceConfig.configBranch())
-                    .setDirectory(checkoutDir)
+                    .setDirectory(checkoutDir.toFile())
                     .setURI(serviceConfig.remoteConfigRepository().toString())
                     .call();
         } catch(GitAPIException ioe) {
@@ -132,10 +136,11 @@ final class GitOperations {
         }
     }
 
-    ImmutableSet<String> affectedFiles(Set<String> allFileNames, ObjectId oldId, ObjectId newId) throws VersioningServiceException {
-        final Set<String> items = affectedFilesBetweenCommits(oldId, newId).stream()
+    Set<String> affectedFiles(Set<Path> filesRelativeToGitRepo, ObjectId oldId, ObjectId newId) throws VersioningServiceException {
+        final List<DiffEntry> diffEntries = affectedFilesBetweenCommits(oldId, newId);
+        final Set<String> items = diffEntries.stream()
                 .map(this::relevantDiffPath)
-                .filter(allFileNames::contains)
+ //               .filter(filesRelativeToGitRepo::contains)
                 .collect(toSet());
         return ImmutableSet.copyOf(items);
     }

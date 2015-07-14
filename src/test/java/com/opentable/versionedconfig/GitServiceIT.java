@@ -11,7 +11,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
+import java.util.Optional;
 
+import com.google.common.collect.ImmutableList;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
@@ -28,7 +30,7 @@ import com.opentable.logging.Log;
  * <p/>
  * n.b. for this test to pass, you will need to have the testing.github.auth-key defined to valid auth key
  * which can read the otpl-deply repo. Otherwise the test will go looking for a local copy. Which will fail
- * if you don't have it cloned in the directory it's expecting ($PWD/../otpl-deploy).
+ * if you don't have it cloned in the directory it's expecting ($PWD/../conf).
  */
 public class GitServiceIT
 {
@@ -41,7 +43,7 @@ public class GitServiceIT
     public void initializeWillCloneRepo() throws IOException
     {
         workFolder.create();
-        final File checkoutSpot = workFolder.newFolder("otpl-deploy");
+        final File checkoutSpot = workFolder.newFolder("init");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
         final VersioningService service = new GitService(versioningServiceProperties);
         assertTrue("checkout directory should exist", checkoutSpot.exists());
@@ -50,7 +52,7 @@ public class GitServiceIT
     @Test
     public void canGetUpdates() throws IOException, VersioningServiceException {
         workFolder.create();
-        final File checkoutSpot = workFolder.newFolder("otpl-deploy");
+        final File checkoutSpot = workFolder.newFolder("update");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
         final VersioningService service = new GitService(versioningServiceProperties);
         service.checkForUpdate();
@@ -60,13 +62,13 @@ public class GitServiceIT
     public void canGetCurrentConfig() throws IOException, VersioningServiceException
     {
         workFolder.create();
-        final File checkoutSpot = workFolder.newFolder("otpl-deploy");
+        final File checkoutSpot = workFolder.newFolder("get");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
 
         final VersioningService service = new GitService(versioningServiceProperties);
 
-        final VersionedConfigUpdate update = service.checkForUpdate();
-        assertTrue(update.isEmpty());
+        final Optional<VersionedConfigUpdate> update = service.checkForUpdate();
+        assertFalse(update.isPresent());
         // this is right after cloning so of course nothing has changed when we pull
     }
 
@@ -77,13 +79,13 @@ public class GitServiceIT
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
 
         final VersioningService service = new GitService(versioningServiceProperties);
-        final VersionedConfigUpdate firstUpdate = service.checkForUpdate();
+        final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
 
         blurtRandomRepoChange(checkoutSpot, "someotherfile");
 
-        final VersionedConfigUpdate secondUpdate = service.checkForUpdate();
-        assertTrue(firstUpdate.isEmpty());
-        assertTrue(secondUpdate.isEmpty());  // no updates we care about here, sir
+        final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
+        assertFalse(firstUpdate.isPresent());
+        assertFalse(secondUpdate.isPresent());  // no updates we care about here, sir
     }
 
     @Test
@@ -93,13 +95,13 @@ public class GitServiceIT
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
 
         final VersioningService service = new GitService(versioningServiceProperties);
-        final VersionedConfigUpdate firstUpdate = service.checkForUpdate();
+        final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
 
         blurtRandomRepoChange(checkoutSpot, "/integrationtest/mappings.cfg.tsv");
 
-        final VersionedConfigUpdate secondUpdate = service.checkForUpdate();
-        assertTrue(firstUpdate.isEmpty());
-        assertFalse(secondUpdate.isEmpty());
+        final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
+        assertFalse(firstUpdate.isPresent());
+        assertTrue(secondUpdate.isPresent());
     }
 
     @Test
@@ -107,16 +109,17 @@ public class GitServiceIT
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
-        Mockito.when(versioningServiceProperties.configFiles()).thenReturn(of("/integrationtest/mappings.cfg.tsv"));
+        final ImmutableList<String> filenamesOfInterest = of("/integrationtest/mappings.cfg.tsv");
+        Mockito.when(versioningServiceProperties.configFiles()).thenReturn(filenamesOfInterest);
 
         final VersioningService service = new GitService(versioningServiceProperties);
-        final VersionedConfigUpdate firstUpdate = service.checkForUpdate();
+        final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
 
         blurtRandomRepoChange(checkoutSpot, "/integrationtest/mappings.cfg.tsv");
 
-        final VersionedConfigUpdate secondUpdate = service.checkForUpdate();
-        assertTrue(firstUpdate.isEmpty());
-        assertFalse(secondUpdate.isEmpty());
+        final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
+        assertFalse(firstUpdate.isPresent());
+        assertTrue(secondUpdate.isPresent());
     }
 
     private void blurtRandomRepoChange(File checkoutDir, String filename) throws IOException, GitAPIException {
@@ -125,7 +128,7 @@ public class GitServiceIT
         final File touchy = new File(checkoutDir, filename);
 
         LOG.info("blurting random change into repo " + repoFile);
-        LOG.info("creating/verifying " + touchy);
+        LOG.info("altering file " + touchy);
 
         assertTrue(touchy.exists() || touchy.createNewFile());
 

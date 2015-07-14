@@ -10,6 +10,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -24,6 +28,8 @@ public class ConfigPollingServiceTest {
     @Test
     public void constructorProvidesInitialUpdate() {
         final VersioningService versioning = mock(VersioningService.class);
+        when(versioning.getCheckoutDirectory()).thenReturn(Paths.get("/tmp/stuff"));
+
         final Consumer<VersionedConfigUpdate> receiver = mock(Consumer.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
 
@@ -34,18 +40,21 @@ public class ConfigPollingServiceTest {
 
         final ArgumentCaptor<VersionedConfigUpdate> updateCatcher = ArgumentCaptor.forClass(VersionedConfigUpdate.class);
         verify(receiver, times(1)).accept(updateCatcher.capture());
-        final ImmutableSet<File> result = updateCatcher.getValue().getAlteredPaths();
+        final Set<Path> result = updateCatcher.getValue().getAlteredPaths();
         assertEquals(2, result.size());
-        assertTrue(result.contains(new File("/tmp/stuff/items.txt")));
-        assertTrue(result.contains(new File("/tmp/stuff/things.txt")));
+        assertTrue(result.contains(Paths.get("/tmp/stuff/items.txt")));
+        assertTrue(result.contains(Paths.get("/tmp/stuff/things.txt")));
     }
 
     @Test
     public void constructorSchedulesUpdates() {
         final VersioningService versioning = mock(VersioningService.class);
+        when(versioning.getCheckoutDirectory()).thenReturn(Paths.get("/tmp/stuff"));
+
         final Consumer<VersionedConfigUpdate> receiver = (x) -> {};
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
 
+        when(versioning.getCheckoutDirectory()).thenReturn(Paths.get("/tmp/stuff"));
         final long delaySec = 10;
         final VersioningServiceProperties properties = createVersioningServiceProperties(delaySec);
         final ConfigPollingService pollingService = new ConfigPollingService(versioning, properties, receiver, executor);
@@ -56,6 +65,9 @@ public class ConfigPollingServiceTest {
     @Test
     public void scheduledUpdatesFeedConsumer() {
         final VersioningService versioning = mock(VersioningService.class);
+        when(versioning.getCheckoutDirectory()).thenReturn(Paths.get("/tmp/stuff"));
+        when(versioning.checkForUpdate()).thenReturn(Optional.of(new VersionedConfigUpdate(ImmutableSet.of(), ImmutableSet.of())));
+
         final Consumer<VersionedConfigUpdate> receiver = mock(Consumer.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
 

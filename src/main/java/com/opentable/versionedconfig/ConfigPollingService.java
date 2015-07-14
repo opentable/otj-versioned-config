@@ -4,7 +4,8 @@ package com.opentable.versionedconfig;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.Closeable;
-import java.io.File;
+import java.nio.file.Path;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -14,7 +15,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import com.opentable.logging.Log;
@@ -30,6 +30,7 @@ public class ConfigPollingService implements Closeable
     private final VersioningService versioning;
     private final Consumer<VersionedConfigUpdate> onUpdate;
     private final ScheduledExecutorService updateExecutor;
+    private final Set<Path> allPathsOfInterest;
 
     @Inject
     public ConfigPollingService(VersioningService versioning,
@@ -52,10 +53,10 @@ public class ConfigPollingService implements Closeable
         this.onUpdate = onUpdate;
 
         LOG.info("ConfigUpdateService seeding initial configuration for FrontDoorService");
-        final Set<File> pathsOfInterest = runtimeProperties.configFiles().stream()
-                .map(filename -> new File(runtimeProperties.localConfigRepository(), filename))
+        this.allPathsOfInterest = runtimeProperties.configFiles().stream()
+                .map(filename -> versioning.getCheckoutDirectory().resolve(filename))
                 .collect(toSet());
-        final VersionedConfigUpdate initialUpdate = new VersionedConfigUpdate(ImmutableSet.copyOf(pathsOfInterest));
+        final VersionedConfigUpdate initialUpdate = new VersionedConfigUpdate(allPathsOfInterest, allPathsOfInterest);
         onUpdate.accept(initialUpdate);
         if (runtimeProperties.configPollingIntervalSeconds() > 0) {
             updateExecutor.scheduleAtFixedRate(this::update,
@@ -76,8 +77,10 @@ public class ConfigPollingService implements Closeable
     public void update()
     {
         try {
-            onUpdate.accept(versioning.checkForUpdate());
-        } catch (VersioningServiceException error) {
+            final Optional<VersionedConfigUpdate> newStuff = versioning.checkForUpdate();
+            newStuff.ifPresent(onUpdate::accept);
+        }
+        catch (VersioningServiceException error) {
             LOG.error(error, "Could not reconfigure service! Serious configuration error!");
             // TODO put some kind of notification in JMX here.
         }

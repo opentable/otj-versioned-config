@@ -1,20 +1,17 @@
 package com.opentable.versionedconfig;
 
-import static com.opentable.versionedconfig.VersionedConfigUpdate.NO_AFFECTED_FILES;
-import static java.util.stream.Collectors.toList;
+import static java.util.Optional.empty;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.util.List;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.inject.Inject;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import org.eclipse.jgit.lib.ObjectId;
 
 import com.opentable.logging.Log;
@@ -27,9 +24,12 @@ class GitService implements VersioningService
 
     private static final Log LOG = Log.findLog();
 
-    private final File checkoutDir;
-    private final List<File> configFiles;
-    private final Set<String> filesAsGitPaths;
+    private final Path checkoutDirectory;
+
+    /**
+     * filenames relative to checkoutDirectory
+     */
+    private final Set<Path> configFileNames;
 
     private final GitOperations gitOperations;
 
@@ -38,21 +38,19 @@ class GitService implements VersioningService
     @Inject
     public GitService(VersioningServiceProperties serviceConfig) throws VersioningServiceException
     {
-        this.checkoutDir = serviceConfig.localConfigRepository();
-        LOG.info("initializing GitService with checkout directory of " + checkoutDir);
+        this.checkoutDirectory = serviceConfig.localConfigRepository().toPath();
+        LOG.info("initializing GitService with checkout directory of " + checkoutDirectory);
 
         try {
-            this.gitOperations = new GitOperations(serviceConfig, checkoutDir);
+            this.gitOperations = new GitOperations(serviceConfig, checkoutDirectory);
 
             gitOperations.checkoutBranch(serviceConfig.configBranch());
             this.latestKnownObjectId = new AtomicReference<>(gitOperations.getCurrentHead());
 
-            final List<String> trimmedFilenames = serviceConfig.configFiles().stream()
-                    .map(this::trimLeadingSlash).collect(toList());
-            this.configFiles = trimmedFilenames.stream().map(name -> new File(checkoutDir, name)).collect(toList());
-            this.filesAsGitPaths = Sets.newHashSet(trimmedFilenames);
-
-
+            this.configFileNames = serviceConfig.configFiles().stream()
+                    .map(this::trimLeadingSlash)
+                    .map(p -> Paths.get(p))
+                    .collect(toSet());
         } catch (IOException exception) {
             throw new VersioningServiceException("Configuration initialization failed, application can't start", exception);
         }
@@ -60,15 +58,6 @@ class GitService implements VersioningService
 
     private String trimLeadingSlash(String s) {
         return s.startsWith("/") ? s.substring(1) : s;
-    }
-
-    private File getCheckoutDir(URI localRepoUri) throws VersioningServiceException
-    {
-        try {
-            return new File(localRepoUri.toURL().getFile());
-        } catch (MalformedURLException e) {
-            throw new VersioningServiceException("Malformed local repo path. Should be a local file: URI", e);
-        }
     }
 
     /**
@@ -81,29 +70,40 @@ class GitService implements VersioningService
      * @return set of affected files, if any, or empty set.
      */
     @Override
-    public VersionedConfigUpdate checkForUpdate() throws VersioningServiceException
+    public Optional<VersionedConfigUpdate> checkForUpdate() throws VersioningServiceException
     {
         if (!gitOperations.pull()) {
-            return NO_AFFECTED_FILES;
+            return empty();
         }
         final ObjectId latest = gitOperations.getCurrentHead();
         if (latest.equals(latestKnownObjectId.get())) {
-            return NO_AFFECTED_FILES;
+            return empty();
         }
-        final Set<File> affectedFiles = gitOperations.affectedFiles(filesAsGitPaths, latestKnownObjectId.get(), latest)
+        final Set<String> allAffected = gitOperations.affectedFiles(configFileNames, latestKnownObjectId.get(), latest);
+        LOG.info("Affected paths = %s ", allAffected.stream().collect(joining(", ")));
+        final Set<Path> affectedFiles = allAffected
                 .stream()
-                .map(this::fileForPath)
+                .map(Paths::get)
+                .filter(configFileNames::contains)
+                .map(checkoutDirectory::resolve)
                 .collect(toSet());
+        final String absolute = affectedFiles.stream().map(Path::toString).collect(joining(", "));
+        LOG.info("Affected absolute paths = %s ", absolute);
         if (affectedFiles.isEmpty()) {
             LOG.debug("Update " + latest + " doesn't affect any paths I care about");
-            return NO_AFFECTED_FILES;
+            return empty();
         }
-        final VersionedConfigUpdate update = new VersionedConfigUpdate(ImmutableSet.copyOf(affectedFiles));
+        final Set<Path> configFilePaths = configFileNames.stream()
+                .map(checkoutDirectory::resolve)
+                .collect(toSet());
+
+        final VersionedConfigUpdate update = new VersionedConfigUpdate(affectedFiles, configFilePaths);
         latestKnownObjectId.set(latest);
-        return update;
+        return Optional.of(update);
     }
 
-    File fileForPath(String path) throws VersioningServiceException {
-        return new File(checkoutDir, path);
+    @Override
+    public Path getCheckoutDirectory() {
+        return checkoutDirectory;
     }
 }
