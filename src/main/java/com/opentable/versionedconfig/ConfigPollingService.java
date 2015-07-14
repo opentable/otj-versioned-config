@@ -1,12 +1,13 @@
 package com.opentable.versionedconfig;
 
 
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toList;
 
 import java.io.Closeable;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -30,7 +31,7 @@ public class ConfigPollingService implements Closeable
     private final VersioningService versioning;
     private final Consumer<VersionedConfigUpdate> onUpdate;
     private final ScheduledExecutorService updateExecutor;
-    private final Set<Path> allPathsOfInterest;
+    private final List<Path> allPathsOfInterest;
 
     @Inject
     public ConfigPollingService(VersioningService versioning,
@@ -55,8 +56,8 @@ public class ConfigPollingService implements Closeable
         LOG.info("ConfigUpdateService seeding initial configuration for FrontDoorService");
         this.allPathsOfInterest = runtimeProperties.configFiles().stream()
                 .map(filename -> versioning.getCheckoutDirectory().resolve(filename))
-                .collect(toSet());
-        final VersionedConfigUpdate initialUpdate = new VersionedConfigUpdate(allPathsOfInterest, allPathsOfInterest);
+                .collect(toList());
+        final VersionedConfigUpdate initialUpdate = new VersionedConfigUpdate(new HashSet<>(allPathsOfInterest), allPathsOfInterest);
         onUpdate.accept(initialUpdate);
         if (runtimeProperties.configPollingIntervalSeconds() > 0) {
             updateExecutor.scheduleAtFixedRate(this::update,

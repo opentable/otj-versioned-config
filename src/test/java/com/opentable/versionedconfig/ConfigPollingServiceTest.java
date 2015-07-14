@@ -66,7 +66,7 @@ public class ConfigPollingServiceTest {
     public void scheduledUpdatesFeedConsumer() {
         final VersioningService versioning = mock(VersioningService.class);
         when(versioning.getCheckoutDirectory()).thenReturn(Paths.get("/tmp/stuff"));
-        when(versioning.checkForUpdate()).thenReturn(Optional.of(new VersionedConfigUpdate(ImmutableSet.of(), ImmutableSet.of())));
+        when(versioning.checkForUpdate()).thenReturn(Optional.of(new VersionedConfigUpdate(ImmutableSet.of(), ImmutableList.of())));
 
         final Consumer<VersionedConfigUpdate> receiver = mock(Consumer.class);
         final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);

@@ -3,6 +3,7 @@ package com.opentable.versionedconfig;
 import static java.util.stream.Collectors.toSet;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 
 public final class VersionedConfigUpdate {
@@ -27,9 +28,9 @@ public final class VersionedConfigUpdate {
 
     private final Set<FileInfo> fileInfos;
     private final Set<Path> alteredPaths;
-    private final Set<Path> allPaths;
+    private final List<Path> allPaths;
 
-    public VersionedConfigUpdate(Set<Path> alteredPaths, Set<Path> allPaths) {
+    public VersionedConfigUpdate(Set<Path> alteredPaths, List<Path> allPaths) {
         this.alteredPaths = alteredPaths;
         this.allPaths = allPaths;
         this.fileInfos = allPaths.stream()
@@ -41,7 +42,11 @@ public final class VersionedConfigUpdate {
         return alteredPaths;
     }
 
-    public Set<Path> getAllPaths() {
+    /**
+     * order's important here!
+     * @return
+     */
+    public List<Path> getAllPaths() {
         return allPaths;
     }
 

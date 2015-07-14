@@ -2,11 +2,13 @@ package com.opentable.versionedconfig;
 
 import static java.util.Optional.empty;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -29,7 +31,7 @@ class GitService implements VersioningService
     /**
      * filenames relative to checkoutDirectory
      */
-    private final Set<Path> configFileNames;
+    private final List<Path> configFileNames;
 
     private final GitOperations gitOperations;
 
@@ -50,7 +52,7 @@ class GitService implements VersioningService
             this.configFileNames = serviceConfig.configFiles().stream()
                     .map(this::trimLeadingSlash)
                     .map(p -> Paths.get(p))
-                    .collect(toSet());
+                    .collect(toList());
         } catch (IOException exception) {
             throw new VersioningServiceException("Configuration initialization failed, application can't start", exception);
         }
@@ -93,9 +95,9 @@ class GitService implements VersioningService
             LOG.debug("Update " + latest + " doesn't affect any paths I care about");
             return empty();
         }
-        final Set<Path> configFilePaths = configFileNames.stream()
+        final List<Path> configFilePaths = configFileNames.stream()
                 .map(checkoutDirectory::resolve)
-                .collect(toSet());
+                .collect(toList());
 
         final VersionedConfigUpdate update = new VersionedConfigUpdate(affectedFiles, configFilePaths);
         latestKnownObjectId.set(latest);

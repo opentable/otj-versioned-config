@@ -136,7 +136,7 @@ final class GitOperations {
         }
     }
 
-    Set<String> affectedFiles(Set<Path> filesRelativeToGitRepo, ObjectId oldId, ObjectId newId) throws VersioningServiceException {
+    Set<String> affectedFiles(List<Path> filesRelativeToGitRepo, ObjectId oldId, ObjectId newId) throws VersioningServiceException {
         final List<DiffEntry> diffEntries = affectedFilesBetweenCommits(oldId, newId);
         final Set<String> items = diffEntries.stream()
                 .map(this::relevantDiffPath)
