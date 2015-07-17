@@ -44,10 +44,4 @@ public interface VersioningServiceProperties
      */
     @Config("config.repo.file")
     List<String> configFiles();
-
-    /**
-     * @return How often to poll for updates
-     */
-    @Config("config.repo.polling.interval.seconds")
-    long configPollingIntervalSeconds();
 }

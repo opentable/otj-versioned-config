@@ -155,7 +155,6 @@ public class GitServiceIT
         Mockito.when(versioningServiceProperties.remoteConfigRepository()).thenReturn(source);
         Mockito.when(versioningServiceProperties.configBranch()).thenReturn("master");
         Mockito.when(versioningServiceProperties.configFiles()).thenReturn(of("integrationtest/mappings.cfg.tsv"));
-        Mockito.when(versioningServiceProperties.configPollingIntervalSeconds()).thenReturn(0L);
         Mockito.when(versioningServiceProperties.repoUsername()).thenReturn(githubAuthKey);
         Mockito.when(versioningServiceProperties.repoPassword()).thenReturn("x-oauth-basic");
 

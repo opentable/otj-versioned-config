@@ -8,6 +8,7 @@ import static java.util.stream.Collectors.toSet;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -32,6 +33,10 @@ class GitService implements VersioningService
      * filenames relative to checkoutDirectory
      */
     private final List<Path> configFileNames;
+    /**
+     * same thing, absolute
+     */
+    private final List<Path> configFilePaths;
 
     private final GitOperations gitOperations;
 
@@ -53,6 +58,10 @@ class GitService implements VersioningService
                     .map(this::trimLeadingSlash)
                     .map(p -> Paths.get(p))
                     .collect(toList());
+            this.configFilePaths = configFileNames.stream()
+                    .map(checkoutDirectory::resolve)
+                    .collect(toList());
+
         } catch (IOException exception) {
             throw new VersioningServiceException("Configuration initialization failed, application can't start", exception);
         }
@@ -60,6 +69,12 @@ class GitService implements VersioningService
 
     private String trimLeadingSlash(String s) {
         return s.startsWith("/") ? s.substring(1) : s;
+    }
+
+    @Override
+    public VersionedConfigUpdate getInitialState() {
+
+        return new VersionedConfigUpdate(new HashSet<>(configFilePaths), configFilePaths);
     }
 
     /**
@@ -75,10 +90,12 @@ class GitService implements VersioningService
     public Optional<VersionedConfigUpdate> checkForUpdate() throws VersioningServiceException
     {
         if (!gitOperations.pull()) {
+            LOG.info("pull did nothing");
             return empty();
         }
         final ObjectId latest = gitOperations.getCurrentHead();
         if (latest.equals(latestKnownObjectId.get())) {
+            LOG.info("SHA didn't change");
             return empty();
         }
         final Set<String> allAffected = gitOperations.affectedFiles(configFileNames, latestKnownObjectId.get(), latest);
@@ -95,10 +112,6 @@ class GitService implements VersioningService
             LOG.debug("Update " + latest + " doesn't affect any paths I care about");
             return empty();
         }
-        final List<Path> configFilePaths = configFileNames.stream()
-                .map(checkoutDirectory::resolve)
-                .collect(toList());
-
         final VersionedConfigUpdate update = new VersionedConfigUpdate(affectedFiles, configFilePaths);
         latestKnownObjectId.set(latest);
         return Optional.of(update);
