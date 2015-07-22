@@ -95,7 +95,7 @@ class GitService implements VersioningService
         }
         final ObjectId latest = gitOperations.getCurrentHead();
         if (latest.equals(latestKnownObjectId.get())) {
-            LOG.info("SHA didn't change");
+            LOG.debug("SHA didn't change");
             return empty();
         }
         final Set<String> allAffected = gitOperations.affectedFiles(configFileNames, latestKnownObjectId.get(), latest);
