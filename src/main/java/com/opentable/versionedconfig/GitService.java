@@ -108,13 +108,15 @@ class GitService implements VersioningService
                 .collect(toSet());
         final String absolute = affectedFiles.stream().map(Path::toString).collect(joining(", "));
         LOG.info("Affected absolute paths = %s ", absolute);
+        final Optional<VersionedConfigUpdate> update;
         if (affectedFiles.isEmpty()) {
             LOG.debug("Update " + latest + " doesn't affect any paths I care about");
-            return empty();
+            update = empty();
+        } else {
+            update = Optional.of(new VersionedConfigUpdate(affectedFiles, configFilePaths));
         }
-        final VersionedConfigUpdate update = new VersionedConfigUpdate(affectedFiles, configFilePaths);
         latestKnownObjectId.set(latest);
-        return Optional.of(update);
+        return update;
     }
 
     @Override
