@@ -90,14 +90,13 @@ class GitService implements VersioningService
     @Override
     public Optional<VersionedConfigUpdate> checkForUpdate() throws VersioningServiceException
     {
-        LOG.info("checking for update, latest known SHA = %s ", latestKnownObjectId.get());
         if (!gitOperations.pull()) {
-            LOG.info("pull did nothing");
+            LOG.debug("pull did nothing");
             return empty();
         }
         final ObjectId latest = gitOperations.getCurrentHead();
         if (latest.equals(latestKnownObjectId.get())) {
-            LOG.info("SHA didn't change");
+            LOG.debug("SHA didn't change");
             return empty();
         }
         LOG.info("newest SHA = %s ", latest.toString());
@@ -117,7 +116,7 @@ class GitService implements VersioningService
             LOG.debug("Update " + latest + " doesn't affect any paths I care about");
             update = empty();
         } else {
-            LOG.debug("Update " + latest + " is relevant to my interests");
+            LOG.info("Update " + latest + " is relevant to my interests");
             update = Optional.of(new VersionedConfigUpdate(affectedFiles, configFilePaths));
         }
         latestKnownObjectId.set(latest);
