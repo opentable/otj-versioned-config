@@ -75,7 +75,7 @@ class GitService implements VersioningService
     @Override
     public VersionedConfigUpdate getInitialState() {
 
-        return new VersionedConfigUpdate(new HashSet<>(configFilePaths), configFilePaths);
+        return new VersionedConfigUpdate(new HashSet<>(configFilePaths), configFilePaths, latestKnownObjectId.toString());
     }
 
     /**
@@ -117,7 +117,7 @@ class GitService implements VersioningService
             update = empty();
         } else {
             LOG.info("Update " + latest + " is relevant to my interests");
-            update = Optional.of(new VersionedConfigUpdate(affectedFiles, configFilePaths));
+            update = Optional.of(new VersionedConfigUpdate(affectedFiles, configFilePaths, latest.toString()));
         }
         latestKnownObjectId.set(latest);
         return update;
@@ -126,5 +126,10 @@ class GitService implements VersioningService
     @Override
     public Path getCheckoutDirectory() {
         return checkoutDirectory;
+    }
+
+    @Override
+    public String getLatestRevision() {
+        return latestKnownObjectId.get().toString();
     }
 }

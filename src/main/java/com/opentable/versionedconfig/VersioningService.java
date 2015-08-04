@@ -9,4 +9,6 @@ public interface VersioningService {
     Optional<VersionedConfigUpdate> checkForUpdate() throws VersioningServiceException;
 
     Path getCheckoutDirectory();
+
+    String getLatestRevision();
 }

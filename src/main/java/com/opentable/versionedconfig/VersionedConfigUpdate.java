@@ -10,10 +10,12 @@ import java.util.Set;
 public final class VersionedConfigUpdate {
     private final Set<Path> alteredPaths;
     private final List<Path> allPaths;
+    private final String revision;
 
-    public VersionedConfigUpdate(Set<Path> alteredPaths, List<Path> allPaths) {
+    public VersionedConfigUpdate(Set<Path> alteredPaths, List<Path> allPaths, String revision) {
         this.alteredPaths = alteredPaths;
         this.allPaths = allPaths;
+        this.revision = revision;
     }
 
     public Set<Path> getAlteredPaths() {
@@ -30,5 +32,9 @@ public final class VersionedConfigUpdate {
 
     public boolean isEmpty() {
         return alteredPaths.isEmpty();
+    }
+
+    public String getRevision() {
+        return revision;
     }
 }
