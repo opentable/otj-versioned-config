@@ -53,6 +53,7 @@ class GitService implements VersioningService
 
             gitOperations.checkoutBranch(serviceConfig.configBranch());
             this.latestKnownObjectId = new AtomicReference<>(gitOperations.getCurrentHead());
+            LOG.info("latest SHA = %s ", latestKnownObjectId.get());
 
             this.configFileNames = serviceConfig.configFiles().stream()
                     .map(this::trimLeadingSlash)
@@ -89,15 +90,18 @@ class GitService implements VersioningService
     @Override
     public Optional<VersionedConfigUpdate> checkForUpdate() throws VersioningServiceException
     {
+        LOG.info("checking for update, latest known SHA = %s ", latestKnownObjectId.get());
         if (!gitOperations.pull()) {
             LOG.info("pull did nothing");
             return empty();
         }
         final ObjectId latest = gitOperations.getCurrentHead();
         if (latest.equals(latestKnownObjectId.get())) {
-            LOG.debug("SHA didn't change");
+            LOG.info("SHA didn't change");
             return empty();
         }
+        LOG.info("newest SHA = %s ", latest.toString());
+
         final Set<String> allAffected = gitOperations.affectedFiles(configFileNames, latestKnownObjectId.get(), latest);
         LOG.info("Affected paths = %s ", allAffected.stream().collect(joining(", ")));
         final Set<Path> affectedFiles = allAffected
@@ -113,6 +117,7 @@ class GitService implements VersioningService
             LOG.debug("Update " + latest + " doesn't affect any paths I care about");
             update = empty();
         } else {
+            LOG.debug("Update " + latest + " is relevant to my interests");
             update = Optional.of(new VersionedConfigUpdate(affectedFiles, configFilePaths));
         }
         latestKnownObjectId.set(latest);

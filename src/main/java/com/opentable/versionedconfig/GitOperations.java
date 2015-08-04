@@ -74,7 +74,7 @@ final class GitOperations {
 
     boolean pull() throws VersioningServiceException
     {
-        LOG.debug("pulling latest");
+        LOG.info("pulling latest");
         try {
             final PullResult result = git.pull().setCredentialsProvider(credentials).call();
             return result.isSuccessful();
@@ -126,7 +126,7 @@ final class GitOperations {
             final Iterator<RevCommit> commIterator = commits.iterator();
             if (commIterator.hasNext()) {
                 final ObjectId id = commIterator.next().getId();
-                LOG.debug("getCurrentHead got id " + id);
+                LOG.info("getCurrentHead got id " + id);
                 return id;
             } else {
                 throw new VersioningServiceException("specified branch has no HEAD");
@@ -159,6 +159,7 @@ final class GitOperations {
      */
     List<DiffEntry> affectedFilesBetweenCommits(ObjectId oldId, ObjectId headId) throws VersioningServiceException {
         try {
+            LOG.info("trying to figure out difference between %s and %s", oldId.toString(), headId.toString());
             final Repository repo = git.getRepository();
             final RevWalk walk = new RevWalk(repo);
 
