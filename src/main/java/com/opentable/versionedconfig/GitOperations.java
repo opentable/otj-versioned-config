@@ -74,7 +74,7 @@ final class GitOperations {
 
     boolean pull() throws VersioningServiceException
     {
-        LOG.info("pulling latest");
+        LOG.debug("pulling latest");
         try {
             final PullResult result = git.pull().setCredentialsProvider(credentials).call();
             return result.isSuccessful();
@@ -126,7 +126,7 @@ final class GitOperations {
             final Iterator<RevCommit> commIterator = commits.iterator();
             if (commIterator.hasNext()) {
                 final ObjectId id = commIterator.next().getId();
-                LOG.info("getCurrentHead got id " + id);
+                LOG.debug("getCurrentHead got id " + id);
                 return id;
             } else {
                 throw new VersioningServiceException("specified branch has no HEAD");
