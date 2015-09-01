@@ -1,20 +1,22 @@
 package com.opentable.versionedconfig;
 
+import static com.google.common.collect.ImmutableList.copyOf;
 import static java.util.Optional.empty;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
+import javax.annotation.concurrent.NotThreadSafe;
 import javax.inject.Inject;
 
+import com.google.common.collect.ImmutableSet;
 import org.eclipse.jgit.lib.ObjectId;
 
 import com.opentable.logging.Log;
@@ -22,21 +24,24 @@ import com.opentable.logging.Log;
 /**
  * Responsible for noticing when service configuration has been updated
  */
+@NotThreadSafe
 class GitService implements VersioningService
 {
 
     private static final Log LOG = Log.findLog();
 
     private final Path checkoutDirectory;
+    private final VersioningServiceProperties serviceConfig;
 
     /**
      * filenames relative to checkoutDirectory
      */
-    private final List<Path> configFileNames;
+    private Set<Path> configFileNames;
+
     /**
      * same thing, absolute
      */
-    private final List<Path> configFilePaths;
+    private Set<Path> configFilePaths;
 
     private final GitOperations gitOperations;
 
@@ -55,27 +60,33 @@ class GitService implements VersioningService
             this.latestKnownObjectId = new AtomicReference<>(gitOperations.getCurrentHead());
             LOG.info("latest SHA = %s ", latestKnownObjectId.get());
 
-            this.configFileNames = serviceConfig.configFiles().stream()
-                    .map(this::trimLeadingSlash)
-                    .map(p -> Paths.get(p))
-                    .collect(toList());
-            this.configFilePaths = configFileNames.stream()
-                    .map(checkoutDirectory::resolve)
-                    .collect(toList());
-
+            this.serviceConfig = serviceConfig;
+            setMonitoredFiles(serviceConfig.configFiles());
         } catch (IOException exception) {
             throw new VersioningServiceException("Configuration initialization failed, application can't start", exception);
         }
     }
 
-    private String trimLeadingSlash(String s) {
-        return s.startsWith("/") ? s.substring(1) : s;
+    /**
+     * change the set of files we monitor
+     */
+    @Override
+    public void setMonitoredFiles(List<String> paths) {
+
+        final Stream<String> hardwired = serviceConfig.configFiles().stream();
+        this.configFileNames = Stream.concat(hardwired, paths.stream())
+                .map(this::trimLeadingSlash)
+                .map(p -> Paths.get(p))
+                .collect(toSet());
+        this.configFilePaths = this.configFileNames.stream()
+                .map(checkoutDirectory::resolve)
+                .collect(toSet());
     }
 
     @Override
     public VersionedConfigUpdate getInitialState() {
 
-        return new VersionedConfigUpdate(new HashSet<>(configFilePaths), configFilePaths, latestKnownObjectId.toString());
+        return new VersionedConfigUpdate(ImmutableSet.copyOf(configFilePaths), copyOf(configFilePaths), latestKnownObjectId.toString());
     }
 
     /**
@@ -101,7 +112,7 @@ class GitService implements VersioningService
         }
         LOG.info("newest SHA = %s ", latest.toString());
 
-        final Set<String> allAffected = gitOperations.affectedFiles(configFileNames, latestKnownObjectId.get(), latest);
+        final Set<String> allAffected = gitOperations.affectedFiles(copyOf(configFileNames), latestKnownObjectId.get(), latest);
         LOG.info("Affected paths = %s ", allAffected.stream().collect(joining(", ")));
         final Set<Path> affectedFiles = allAffected
                 .stream()
@@ -117,7 +128,7 @@ class GitService implements VersioningService
             update = empty();
         } else {
             LOG.info("Update " + latest + " is relevant to my interests");
-            update = Optional.of(new VersionedConfigUpdate(affectedFiles, configFilePaths, latest.toString()));
+            update = Optional.of(new VersionedConfigUpdate(affectedFiles, copyOf(configFilePaths), latest.toString()));
         }
         latestKnownObjectId.set(latest);
         return update;
@@ -131,5 +142,9 @@ class GitService implements VersioningService
     @Override
     public String getLatestRevision() {
         return latestKnownObjectId.get().toString();
+    }
+
+    private String trimLeadingSlash(String s) {
+        return s.startsWith("/") ? s.substring(1) : s;
     }
 }
