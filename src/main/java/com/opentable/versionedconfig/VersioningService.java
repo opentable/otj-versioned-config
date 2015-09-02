@@ -1,11 +1,11 @@
 package com.opentable.versionedconfig;
 
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface VersioningService {
-    void setMonitoredFiles(List<String> paths);
+    void setMonitoredFiles(Set<Path> pathsRelativeToCheckoutDir);
 
     VersionedConfigUpdate getInitialState();
 

@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.skife.config.Config;
 
-public interface VersioningServiceProperties
+interface VersioningServiceProperties
 {
     /**
      * @return Where the configuration should be cloned from
