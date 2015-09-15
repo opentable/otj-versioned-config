@@ -16,6 +16,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import javax.inject.Inject;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import org.eclipse.jgit.lib.ObjectId;
 
 import com.opentable.logging.Log;
@@ -85,6 +86,12 @@ class GitService implements VersioningService
         return new VersionedConfigUpdate(
                 checkoutDirectory, copyOf(hardwiredPaths), copyOf(hardwiredPaths), latestKnownObjectId.toString()
         );
+    }
+
+    @Override
+    public VersionedConfigUpdate getCurrentState() {
+        return new VersionedConfigUpdate(
+                checkoutDirectory, ImmutableSet.of(), copyOf(monitoredFiles), latestKnownObjectId.toString());
     }
 
     /**

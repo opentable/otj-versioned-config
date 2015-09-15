@@ -9,6 +9,8 @@ public interface VersioningService {
 
     VersionedConfigUpdate getInitialState();
 
+    VersionedConfigUpdate getCurrentState();
+
     Optional<VersionedConfigUpdate> checkForUpdate() throws VersioningServiceException;
 
     Path getCheckoutDirectory();
