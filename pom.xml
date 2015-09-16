@@ -13,13 +13,13 @@
     <connection>scm:git:git://github.com/opentable/otj-versioned-config.git</connection>
     <developerConnection>scm:git:git@github.com:opentable/otj-versioned-config.git</developerConnection>
     <url>http://github.com/opentable/otj-versioned-config</url>
-    <tag>otj-versioned-config-2.0.1</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <groupId>com.opentable.components</groupId>
   <artifactId>otj-versioned-config</artifactId>
   <name>otj-versioned-config</name>
-  <version>2.0.1</version>
+  <version>2.0.2-SNAPSHOT</version>
   <packaging>jar</packaging>
   <description>component for polling configuration information from git.</description>
 
