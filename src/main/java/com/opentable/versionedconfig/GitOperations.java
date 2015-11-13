@@ -55,7 +55,6 @@ final class GitOperations {
         } else {
             LOG.info("checkout directory %s does not yet exist", checkoutDir);
         }
-        LOG.info("cloning to checkout directory", checkoutDir);
         final String cloneSource = cloningUriToGitArgument(serviceConfig.remoteConfigRepository());
         LOG.info("cloning %s to %s", cloneSource, checkoutDir);
 
