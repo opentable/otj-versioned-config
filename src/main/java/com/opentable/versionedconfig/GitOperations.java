@@ -56,13 +56,14 @@ final class GitOperations {
             LOG.info("checkout directory %s does not yet exist", checkoutDir);
         }
         final String cloneSource = cloningUriToGitArgument(serviceConfig.remoteConfigRepository());
-        LOG.info("cloning %s to %s", cloneSource, checkoutDir);
+        final String cloneBranch = serviceConfig.configBranch();
+        LOG.info("cloning %s (branch %s) to %s", cloneSource, cloneBranch, checkoutDir);
 
         try {
             return Git.cloneRepository()
                     .setBare(false)
                     .setCredentialsProvider(credentials)
-                    .setBranch(serviceConfig.configBranch())
+                    .setBranch(cloneBranch)
                     .setDirectory(checkoutDir.toFile())
                     .setURI(serviceConfig.remoteConfigRepository().toString())
                     .call();
