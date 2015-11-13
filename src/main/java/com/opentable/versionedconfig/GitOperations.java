@@ -14,6 +14,7 @@ import java.util.Set;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -65,7 +66,7 @@ final class GitOperations {
                     .setCredentialsProvider(credentials)
                     .setBranch(serviceConfig.configBranch())
                     .setDirectory(checkoutDir.toFile())
-                    .setURI(serviceConfig.remoteConfigRepository().toString())
+                    .setURI(cloneSource)
                     .call();
         } catch(GitAPIException ioe) {
             throw new VersioningServiceException("Could not clone repo", ioe);
