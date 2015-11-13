@@ -14,6 +14,7 @@ import java.util.Set;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -74,7 +75,7 @@ final class GitOperations {
 
     boolean pull() throws VersioningServiceException
     {
-        LOG.debug("pulling latest");
+        LOG.trace("pulling latest");
         try {
             final PullResult result = git.pull().setCredentialsProvider(credentials).call();
             return result.isSuccessful();
@@ -119,7 +120,7 @@ final class GitOperations {
     }
 
     ObjectId getCurrentHead() throws VersioningServiceException {
-        LOG.debug("getCurrentHead");
+        LOG.trace("getCurrentHead");
         try {
             final ObjectId head = git.getRepository().resolve(Constants.HEAD);
             final Iterable<RevCommit> commits = git.log().add(head).setMaxCount(1).call();
