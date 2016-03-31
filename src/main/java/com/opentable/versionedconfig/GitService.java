@@ -28,6 +28,7 @@ import com.opentable.logging.Log;
  * Responsible for noticing when service configuration has been updated
  */
 @NotThreadSafe
+@SuppressWarnings("PMD.TooManyStaticImports")
 class GitService implements VersioningService
 {
 

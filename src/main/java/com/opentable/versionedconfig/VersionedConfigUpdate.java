@@ -3,7 +3,6 @@ package com.opentable.versionedconfig;
 import static java.util.stream.Collectors.toSet;
 
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Set;
 
 /**
