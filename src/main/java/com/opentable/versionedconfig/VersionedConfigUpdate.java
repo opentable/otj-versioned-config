@@ -3,6 +3,7 @@ package com.opentable.versionedconfig;
 import static java.util.stream.Collectors.toSet;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -55,7 +56,7 @@ public final class VersionedConfigUpdate {
     /**
      * @return all known paths as absolute paths (i.e. including basePath)
      */
-    public Set<Path> dgetAllAbsolutePaths() {
+    public Set<Path> getAllAbsolutePaths() {
         return allKnownFiles.stream().map(basePath::resolve).collect(toSet());
     }
 

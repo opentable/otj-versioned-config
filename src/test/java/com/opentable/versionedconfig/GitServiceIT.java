@@ -126,7 +126,7 @@ public class GitServiceIT
 
         // ok let's start watching it then make a change
         final Set<Path> paths = ImmutableSet.of(Paths.get("integrationtest/things.txt"));
-        service.setMonitoredFiles(paths);
+        service.setAllMonitoredPaths(paths);
         blurtRandomRepoChange(checkoutSpot, "integrationtest/things.txt");
 
         final Optional<VersionedConfigUpdate> thirdUpdate = service.checkForUpdate();
@@ -173,12 +173,12 @@ public class GitServiceIT
         assertTrue(firstUpdate.isPresent());
 
         // just pay attention to new file
-        service.setMonitoredFiles(ImmutableSet.of(Paths.get("integrationtest/whatever")));
+        service.setAllMonitoredPaths(ImmutableSet.of(Paths.get("integrationtest/whatever")));
         blurtRandomRepoChange(checkoutSpot, "integrationtest/whatever");
         assertTrue(service.checkForUpdate().isPresent());
 
         // now forget it, write it, and be oblivious
-        service.setMonitoredFiles(ImmutableSet.of(Paths.get("integrationtest/mappings.cfg.tsv")));
+        service.setAllMonitoredPaths(ImmutableSet.of(Paths.get("integrationtest/mappings.cfg.tsv")));
         blurtRandomRepoChange(checkoutSpot, "integrationtest/whatever");
         assertFalse(service.checkForUpdate().isPresent());
     }

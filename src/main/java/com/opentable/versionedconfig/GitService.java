@@ -3,11 +3,14 @@ package com.opentable.versionedconfig;
 import static com.google.common.collect.ImmutableSet.copyOf;
 import static java.util.Optional.empty;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -32,12 +35,18 @@ class GitService implements VersioningService
 
     private final Path checkoutDirectory;
     private final VersioningServiceProperties serviceConfig;
-    private final Set<Path> hardwiredPaths;
 
     /**
-     * filenames relative to checkoutDirectory which we want to keep an eye on
+     * initial paths to start watching
      */
-    private Set<Path> monitoredFiles;
+    private final List<Path> initialPaths;
+
+    /**
+     * Filenames relative to checkoutDirectory which we want to keep an eye on.
+     *
+     * Includes initialPaths.
+     */
+    private Set<Path> allMonitoredPaths;
 
     private final GitOperations gitOperations;
 
@@ -57,12 +66,12 @@ class GitService implements VersioningService
             LOG.info("latest SHA = %s ", latestKnownObjectId.get());
 
             this.serviceConfig = serviceConfig;
-            this.hardwiredPaths = serviceConfig.configFiles().stream()
+            this.initialPaths = serviceConfig.configFiles().stream()
                     .map(this::cleanPath)
                     .map(Paths::get)
-                    .collect(toSet());
-            LOG.info("hardwired paths = %s", hardwiredPaths.stream().map(Path::toString).collect(joining(", ")));
-            this.monitoredFiles = hardwiredPaths; // initially
+                    .collect(toList());
+            LOG.info("hardwired paths = %s", initialPaths.stream().map(Path::toString).collect(joining(", ")));
+            this.allMonitoredPaths = new HashSet<>(initialPaths); // initially
         } catch (IOException exception) {
             throw new VersioningServiceException("Configuration initialization failed, application can't start", exception);
         }
@@ -71,27 +80,26 @@ class GitService implements VersioningService
     /**
      * change the set of files we monitor. hardwired ones never go away.
      */
-    @Override
-    public void setMonitoredFiles(Set<Path> paths) {
+    public void setAllMonitoredPaths(Set<Path> paths) {
         final Stream<Path> stream = paths.stream()
                 .map(Object::toString)
                 .map(this::cleanPath)
                 .map(Paths::get);
-        this.monitoredFiles = Stream.concat(hardwiredPaths.stream(), stream).collect(toSet());
-        LOG.debug("setMonitoredFiles: %s", monitoredFiles.stream().map(Path::toString).collect(joining(", ")));
+        this.allMonitoredPaths = Stream.concat(initialPaths.stream(), stream).collect(toSet());
+        LOG.debug("setAllMonitoredPaths: %s", allMonitoredPaths.stream().map(Path::toString).collect(joining(", ")));
     }
 
     @Override
     public VersionedConfigUpdate getInitialState() {
         return new VersionedConfigUpdate(
-                checkoutDirectory, copyOf(hardwiredPaths), copyOf(hardwiredPaths), latestKnownObjectId.toString()
+                checkoutDirectory, copyOf(initialPaths), copyOf(initialPaths), latestKnownObjectId.toString()
         );
     }
 
     @Override
     public VersionedConfigUpdate getCurrentState() {
         return new VersionedConfigUpdate(
-                checkoutDirectory, ImmutableSet.of(), copyOf(monitoredFiles), latestKnownObjectId.toString());
+                checkoutDirectory, ImmutableSet.of(), copyOf(allMonitoredPaths), latestKnownObjectId.toString());
     }
 
     /**
@@ -118,12 +126,12 @@ class GitService implements VersioningService
         LOG.info("newest SHA = %s ", latest.toString());
 
         final Set<String> allAffected = gitOperations.affectedFiles(
-                ImmutableList.copyOf(monitoredFiles), latestKnownObjectId.get(), latest);
+                ImmutableList.copyOf(allMonitoredPaths), latestKnownObjectId.get(), latest);
         LOG.info("Affected paths = %s ", allAffected.stream().collect(joining(", ")));
         final Set<Path> affectedFiles = allAffected
                 .stream()
                 .map(Paths::get)
-                .filter(monitoredFiles::contains)
+                .filter(allMonitoredPaths::contains)
                 .collect(toSet());
         final String absolute = affectedFiles.stream().map(Path::toString).collect(joining(", "));
         LOG.info("Affected absolute paths = %s ", absolute);
@@ -134,7 +142,7 @@ class GitService implements VersioningService
         } else {
             LOG.info("Update " + latest + " is relevant to my interests");
             update = Optional.of(new VersionedConfigUpdate(
-                    checkoutDirectory, affectedFiles, copyOf(monitoredFiles), latest.toString())
+                    checkoutDirectory, affectedFiles, copyOf(allMonitoredPaths), latest.toString())
             );
         }
         latestKnownObjectId.set(latest);
@@ -149,6 +157,10 @@ class GitService implements VersioningService
     @Override
     public String getLatestRevision() {
         return latestKnownObjectId.get().toString();
+    }
+
+    public List<Path> getInitialPaths() {
+        return initialPaths;
     }
 
     private String cleanPath(String path) {
