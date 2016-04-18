@@ -5,6 +5,7 @@ import java.net.URI;
 import java.util.List;
 
 import org.skife.config.Config;
+import org.skife.config.Default;
 
 interface VersioningServiceProperties
 {
@@ -24,6 +25,7 @@ interface VersioningServiceProperties
      * @return Repo password or auth type
      */
     @Config("config.repo.password")
+    @Default("x-oauth-basic")
     String repoPassword();
 
 
@@ -31,17 +33,20 @@ interface VersioningServiceProperties
      * @return Where the configuration should be cloned to, in the local filesystem
      */
     @Config("config.repo.local")
+    @Default("config-checkout")
     File localConfigRepository();
 
     /**
      * @return Which configuration branch to read
      */
     @Config("config.repo.branch")
+    @Default("master")
     String configBranch();
 
     /**
      * @return Which configuration files(s) to read, comma-separated if more than one
      */
     @Config("config.repo.file")
+    @Default("")
     List<String> configFiles();
 }
