@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.skife.config.Config;
 import org.skife.config.Default;
+import org.skife.config.DefaultNull;
 
 interface VersioningServiceProperties
 {
@@ -30,10 +31,12 @@ interface VersioningServiceProperties
 
 
     /**
-     * @return Where the configuration should be cloned to, in the local filesystem
+     * Where the configuration should be cloned to, in the local filesystem.
+     * If left to the null default, will create a temporary checkout that is destroyed
+     * on close.
      */
     @Config("config.repo.local")
-    @Default("config-checkout")
+    @DefaultNull
     File localConfigRepository();
 
     /**
