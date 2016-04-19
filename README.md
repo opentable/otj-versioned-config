@@ -27,10 +27,9 @@ Configuration Properties
 ------------------------
 | Property name | Purpose | Example value |
 | ------------- | ------- | ------------- |
-| config.repo.remote | github repo URI | https://API_KEY_REPLACE_ME:x-oauth-basic@github.com/opentable/service-ot-frontdoor-config |
-| config.repo.local | where to check out repo locally (URI) | file:frontdoor-config |
+| config.repo.remote | github repo URI | https://github.com/opentable/service-ot-frontdoor-config |
+| config.repo.username | username or API key | *your github API key* |
+| config.repo.password | password or authentication method | x-oauth-basic |
+| config.repo.local | where to check out repo locally (URI) | frontdoor-config |
 | config.repo.branch | The branch in the configuration repo to read | master |
 | config.repo.file | The configuraation file to read (relative to repo) | /mappings.cfg.tsv |
-| config.repo.polling.path.probe | Path in working copy to which we restrict update detection | . |
-| config.repo.polling.interval.seconds | How often to poll for updates | 30 |
-

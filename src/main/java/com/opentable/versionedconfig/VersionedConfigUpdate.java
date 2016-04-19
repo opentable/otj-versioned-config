@@ -55,7 +55,7 @@ public final class VersionedConfigUpdate {
     /**
      * @return all known paths as absolute paths (i.e. including basePath)
      */
-    public Set<Path> dgetAllAbsolutePaths() {
+    public Set<Path> getAllAbsolutePaths() {
         return allKnownFiles.stream().map(basePath::resolve).collect(toSet());
     }
 

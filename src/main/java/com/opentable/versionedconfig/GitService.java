@@ -5,20 +5,29 @@ import static java.util.Optional.empty;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.inject.Inject;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+
 import org.eclipse.jgit.lib.ObjectId;
 
+import com.opentable.lifecycle.LifecycleStage;
+import com.opentable.lifecycle.guice.OnStage;
 import com.opentable.logging.Log;
 
 /**
@@ -46,7 +55,7 @@ class GitService implements VersioningService
     @Inject
     public GitService(VersioningServiceProperties serviceConfig) throws VersioningServiceException
     {
-        this.checkoutDirectory = serviceConfig.localConfigRepository().toPath();
+        this.checkoutDirectory = getCheckoutPath(serviceConfig);
         LOG.info("initializing GitService with checkout directory of " + checkoutDirectory);
 
         try {
@@ -66,6 +75,22 @@ class GitService implements VersioningService
         } catch (IOException exception) {
             throw new VersioningServiceException("Configuration initialization failed, application can't start", exception);
         }
+    }
+
+    private Path getCheckoutPath(VersioningServiceProperties serviceConfig) {
+        final File configuredFile = serviceConfig.localConfigRepository();
+        if (configuredFile != null) {
+            return configuredFile.toPath();
+        }
+
+        Path result;
+        try {
+            result = Files.createTempDirectory("config");
+        } catch (IOException e) {
+            throw new VersioningServiceException(e);
+        }
+        LOG.info("Checking out into a temporary directory: %s", result);
+        return result;
     }
 
     /**
@@ -157,5 +182,25 @@ class GitService implements VersioningService
             return trimmed.substring(1);
         }
         return trimmed;
+    }
+
+    @Override
+    @OnStage(LifecycleStage.STOP)
+    public void close() throws IOException {
+        if (serviceConfig.localConfigRepository() == null) {
+            Files.walkFileTree(checkoutDirectory, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Files.delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    Files.delete(dir);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        }
     }
 }
