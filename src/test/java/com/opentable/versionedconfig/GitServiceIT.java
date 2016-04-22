@@ -24,6 +24,7 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -38,6 +39,7 @@ import org.slf4j.LoggerFactory;
  * which can read the otpl-deply repo. Otherwise the test will go looking for a local copy. Which will fail
  * if you don't have it cloned in the directory it's expecting ($PWD/../conf).
  */
+@Ignore
 public class GitServiceIT
 {
 
