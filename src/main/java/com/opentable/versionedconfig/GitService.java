@@ -52,7 +52,7 @@ class GitService implements VersioningService
     private AtomicReference<ObjectId> latestKnownObjectId;
 
     @Inject
-    public GitService(VersioningServiceProperties serviceConfig) throws VersioningServiceException
+    GitService(VersioningServiceProperties serviceConfig) throws VersioningServiceException
     {
         this.checkoutDirectory = getCheckoutPath(serviceConfig);
         LOG.info("initializing GitService with checkout directory of " + checkoutDirectory);
