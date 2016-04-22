@@ -7,12 +7,9 @@ import static java.util.stream.Collectors.toSet;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -26,6 +23,7 @@ import com.google.common.collect.ImmutableSet;
 
 import org.eclipse.jgit.lib.ObjectId;
 
+import com.opentable.io.DeleteRecursively;
 import com.opentable.lifecycle.LifecycleStage;
 import com.opentable.lifecycle.guice.OnStage;
 import com.opentable.logging.Log;
@@ -191,18 +189,6 @@ class GitService implements VersioningService
             return;
         }
 
-        Files.walkFileTree(checkoutDirectory, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                Files.delete(file);
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                Files.delete(dir);
-                return FileVisitResult.CONTINUE;
-            }
-        });
+        Files.walkFileTree(checkoutDirectory, DeleteRecursively.INSTANCE);
     }
 }
