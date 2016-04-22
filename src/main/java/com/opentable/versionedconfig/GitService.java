@@ -22,11 +22,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 import org.eclipse.jgit.lib.ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.opentable.io.DeleteRecursively;
 import com.opentable.lifecycle.LifecycleStage;
 import com.opentable.lifecycle.guice.OnStage;
-import com.opentable.logging.Log;
 
 /**
  * Responsible for noticing when service configuration has been updated
@@ -35,7 +36,7 @@ import com.opentable.logging.Log;
 class GitService implements VersioningService
 {
 
-    private static final Log LOG = Log.findLog();
+    private static final Logger LOG = LoggerFactory.getLogger(GitService.class);
 
     private final Path checkoutDirectory;
     private final VersioningServiceProperties serviceConfig;
@@ -61,14 +62,14 @@ class GitService implements VersioningService
 
             gitOperations.checkoutBranch(serviceConfig.configBranch());
             this.latestKnownObjectId = new AtomicReference<>(gitOperations.getCurrentHead());
-            LOG.info("latest SHA = %s ", latestKnownObjectId.get());
+            LOG.info("latest SHA = {}", latestKnownObjectId.get());
 
             this.serviceConfig = serviceConfig;
             this.hardwiredPaths = serviceConfig.configFiles().stream()
                     .map(this::cleanPath)
                     .map(Paths::get)
                     .collect(toSet());
-            LOG.info("hardwired paths = %s", hardwiredPaths.stream().map(Path::toString).collect(joining(", ")));
+            LOG.info("hardwired paths = {}", hardwiredPaths.stream().map(Path::toString).collect(joining(", ")));
             this.monitoredFiles = hardwiredPaths; // initially
         } catch (IOException exception) {
             throw new VersioningServiceException("Configuration initialization failed, application can't start", exception);
@@ -87,7 +88,7 @@ class GitService implements VersioningService
         } catch (IOException e) {
             throw new VersioningServiceException(e);
         }
-        LOG.info("Checking out into a temporary directory: %s", result);
+        LOG.info("Checking out into a temporary directory: {}", result);
         return result;
     }
 
@@ -101,7 +102,7 @@ class GitService implements VersioningService
                 .map(this::cleanPath)
                 .map(Paths::get);
         this.monitoredFiles = Stream.concat(hardwiredPaths.stream(), stream).collect(toSet());
-        LOG.debug("setMonitoredFiles: %s", monitoredFiles.stream().map(Path::toString).collect(joining(", ")));
+        LOG.debug("setMonitoredFiles: {}", monitoredFiles.stream().map(Path::toString).collect(joining(", ")));
     }
 
     @Override
@@ -135,27 +136,27 @@ class GitService implements VersioningService
         }
         final ObjectId latest = gitOperations.getCurrentHead();
         if (latest.equals(latestKnownObjectId.get())) {
-            LOG.debug("SHA didn't change");
+            LOG.trace("SHA didn't change");
             return empty();
         }
-        LOG.info("newest SHA = %s ", latest.toString());
+        LOG.info("newest SHA = {}", latest.toString());
 
         final Set<String> allAffected = gitOperations.affectedFiles(
                 ImmutableList.copyOf(monitoredFiles), latestKnownObjectId.get(), latest);
-        LOG.info("Affected paths = %s ", allAffected.stream().collect(joining(", ")));
+        LOG.info("Affected paths = {}", allAffected.stream().collect(joining(", ")));
         final Set<Path> affectedFiles = allAffected
                 .stream()
                 .map(Paths::get)
                 .filter(monitoredFiles::contains)
                 .collect(toSet());
         final String absolute = affectedFiles.stream().map(Path::toString).collect(joining(", "));
-        LOG.info("Affected absolute paths = %s ", absolute);
+        LOG.info("Affected absolute paths = {}", absolute);
         final Optional<VersionedConfigUpdate> update;
         if (affectedFiles.isEmpty()) {
-            LOG.debug("Update " + latest + " doesn't affect any paths I care about");
+            LOG.debug("Update {} doesn't affect any paths I care about", latest);
             update = empty();
         } else {
-            LOG.info("Update " + latest + " is relevant to my interests");
+            LOG.info("Update {} is relevant to my interests", latest);
             update = Optional.of(new VersionedConfigUpdate(
                     checkoutDirectory, affectedFiles, copyOf(monitoredFiles), latest.toString())
             );
