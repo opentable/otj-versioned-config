@@ -19,16 +19,18 @@ import java.util.Set;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
-
-import com.opentable.logging.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Make sure we can talk to github to grab config. May require local tweaking to pass.
@@ -37,10 +39,11 @@ import com.opentable.logging.Log;
  * which can read the otpl-deply repo. Otherwise the test will go looking for a local copy. Which will fail
  * if you don't have it cloned in the directory it's expecting ($PWD/../conf).
  */
+@Ignore
 public class GitServiceIT
 {
 
-    private static final Log LOG = Log.findLog();
+    private static final Logger LOG = LoggerFactory.getLogger(GitServiceIT.class);
     @Rule
     public TemporaryFolder workFolder = new TemporaryFolder();
 
@@ -206,20 +209,19 @@ public class GitServiceIT
         final Git git = new Git(new FileRepository(repoFile));
         final File touchy = new File(checkoutDir, filename);
 
-        LOG.info("blurting random change into repo " + repoFile);
-        LOG.info("altering file " + touchy);
+        LOG.info("blurting random change into repo '{}'; altering '{}'", repoFile, touchy);
 
         assertTrue(touchy.exists() || touchy.createNewFile());
 
         try(FileWriter fw = new FileWriter(touchy, true); PrintWriter pw = new PrintWriter(fw)) {
-            LOG.info("appending some stuff ");
+            LOG.info("appending some stuff");
             pw.append("Another line");
             pw.flush();
         }
         git.add().addFilepattern(".").call();
         final RevCommit commit = git.commit().setMessage("how touching").call();
         git.close();
-        LOG.info("commit = " + commit);
+        LOG.info("commit = {}", commit);
     }
 
     private VersioningServiceProperties getVersioningServiceProperties(File checkoutSpot) {

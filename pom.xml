@@ -6,7 +6,7 @@
   <parent>
     <groupId>com.opentable</groupId>
     <artifactId>otj-parent</artifactId>
-    <version>39</version>
+    <version>49</version>
   </parent>
 
   <scm>
@@ -29,14 +29,14 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.eclipse.jgit</groupId>
-      <artifactId>org.eclipse.jgit</artifactId>
-      <version>${dep.jgit.version}</version>
+      <groupId>com.opentable.components</groupId>
+      <artifactId>otj-core</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>com.opentable.components</groupId>
-      <artifactId>otj-logging</artifactId>
+      <groupId>org.eclipse.jgit</groupId>
+      <artifactId>org.eclipse.jgit</artifactId>
+      <version>${dep.jgit.version}</version>
     </dependency>
 
     <dependency>
@@ -73,6 +73,11 @@
     <dependency>
       <groupId>com.google.code.findbugs</groupId>
       <artifactId>annotations</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
     </dependency>
 
     <dependency>
