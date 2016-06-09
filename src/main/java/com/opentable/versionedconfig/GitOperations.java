@@ -30,11 +30,11 @@ import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
-
-import com.opentable.logging.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class GitOperations {
-    private static final Log LOG = Log.findLog();
+    private static final Logger LOG = LoggerFactory.getLogger(GitOperations.class);
     private final Git git;
     private final CredentialsProvider credentials;
 
@@ -46,19 +46,19 @@ final class GitOperations {
     private Git openRepo(final VersioningServiceProperties serviceConfig, Path checkoutDir)
             throws VersioningServiceException, IOException {
         if (Files.exists(checkoutDir) && Files.isDirectory(checkoutDir)) {
-            LOG.info("checkout directory %s already exists", checkoutDir);
+            LOG.info("checkout directory {} already exists", checkoutDir);
             final boolean dirNotEmpty = Files.newDirectoryStream(checkoutDir).iterator().hasNext();
             if (dirNotEmpty) {
                 return new Git(new FileRepository(checkoutDir.resolve(".git").toFile()));
             } else {
-                LOG.info("checkout directory %s exists but is empty, can reuse", checkoutDir);
+                LOG.info("checkout directory {} exists but is empty, can reuse", checkoutDir);
             }
         } else {
-            LOG.info("checkout directory %s does not yet exist", checkoutDir);
+            LOG.info("checkout directory {} does not yet exist", checkoutDir);
         }
         final String cloneSource = cloningUriToGitArgument(serviceConfig.remoteConfigRepository());
         final String cloneBranch = serviceConfig.configBranch();
-        LOG.info("cloning %s (branch %s) to %s", cloneSource, cloneBranch, checkoutDir);
+        LOG.info("cloning {} (branch {}) to {}", cloneSource, cloneBranch, checkoutDir);
 
         try {
             return Git.cloneRepository()
@@ -86,7 +86,7 @@ final class GitOperations {
 
     @VisibleForTesting
     void checkoutBranch(String branch) throws VersioningServiceException {
-        LOG.info("checking out branch %s", branch);
+        LOG.info("checking out branch {}", branch);
         try {
             git.checkout().setName(branch).call();
         } catch (GitAPIException cause) {
@@ -127,7 +127,7 @@ final class GitOperations {
             final Iterator<RevCommit> commIterator = commits.iterator();
             if (commIterator.hasNext()) {
                 final ObjectId id = commIterator.next().getId();
-                LOG.debug("getCurrentHead got id " + id);
+                LOG.trace("getCurrentHead got id {}", id);
                 return id;
             } else {
                 throw new VersioningServiceException("specified branch has no HEAD");
@@ -160,7 +160,7 @@ final class GitOperations {
      */
     List<DiffEntry> affectedFilesBetweenCommits(ObjectId oldId, ObjectId headId) throws VersioningServiceException {
         try {
-            LOG.info("trying to figure out difference between %s and %s", oldId.toString(), headId.toString());
+            LOG.trace("trying to figure out difference between {} and {}", oldId.toString(), headId.toString());
             final Repository repo = git.getRepository();
             final RevWalk walk = new RevWalk(repo);
 

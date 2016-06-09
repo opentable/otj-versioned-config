@@ -6,7 +6,9 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
@@ -21,9 +23,12 @@ import javax.inject.Inject;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.eclipse.jgit.lib.ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.opentable.logging.Log;
-
+import com.opentable.io.DeleteRecursively;
+import com.opentable.lifecycle.LifecycleStage;
+import com.opentable.lifecycle.guice.OnStage;
 /**
  * Responsible for noticing when service configuration has been updated
  */
@@ -32,7 +37,7 @@ import com.opentable.logging.Log;
 class GitService implements VersioningService
 {
 
-    private static final Log LOG = Log.findLog();
+    private static final Logger LOG = LoggerFactory.getLogger(GitService.class);
 
     private final Path checkoutDirectory;
     private final VersioningServiceProperties serviceConfig;
@@ -54,9 +59,9 @@ class GitService implements VersioningService
     private AtomicReference<ObjectId> latestKnownObjectId;
 
     @Inject
-    public GitService(VersioningServiceProperties serviceConfig) throws VersioningServiceException
+    GitService(VersioningServiceProperties serviceConfig) throws VersioningServiceException
     {
-        this.checkoutDirectory = serviceConfig.localConfigRepository().toPath();
+        this.checkoutDirectory = getCheckoutPath(serviceConfig);
         LOG.info("initializing GitService with checkout directory of " + checkoutDirectory);
 
         try {
@@ -64,30 +69,47 @@ class GitService implements VersioningService
 
             gitOperations.checkoutBranch(serviceConfig.configBranch());
             this.latestKnownObjectId = new AtomicReference<>(gitOperations.getCurrentHead());
-            LOG.info("latest SHA = %s ", latestKnownObjectId.get());
+            LOG.info("latest SHA = {}", latestKnownObjectId.get());
 
             this.serviceConfig = serviceConfig;
             this.initialPaths = serviceConfig.configFiles().stream()
                     .map(this::cleanPath)
                     .map(Paths::get)
                     .collect(toList());
-            LOG.info("hardwired paths = %s", initialPaths.stream().map(Path::toString).collect(joining(", ")));
+            LOG.info("hardwired paths = {}", initialPaths.stream().map(Path::toString).collect(joining(", ")));
             this.allMonitoredPaths = new HashSet<>(initialPaths); // initially
         } catch (IOException exception) {
             throw new VersioningServiceException("Configuration initialization failed, application can't start", exception);
         }
     }
 
+    private Path getCheckoutPath(VersioningServiceProperties serviceConfig) {
+        final File configuredFile = serviceConfig.localConfigRepository();
+        if (configuredFile != null) {
+            return configuredFile.toPath();
+        }
+
+        Path result;
+        try {
+            result = Files.createTempDirectory("config");
+        } catch (IOException e) {
+            throw new VersioningServiceException(e);
+        }
+        LOG.info("Checking out into a temporary directory: {}", result);
+        return result;
+    }
+
     /**
      * change the set of files we monitor. hardwired ones never go away.
      */
+    @Override
     public void setAllMonitoredPaths(Set<Path> paths) {
         final Stream<Path> stream = paths.stream()
                 .map(Object::toString)
                 .map(this::cleanPath)
                 .map(Paths::get);
         this.allMonitoredPaths = Stream.concat(initialPaths.stream(), stream).collect(toSet());
-        LOG.debug("setAllMonitoredPaths: %s", allMonitoredPaths.stream().map(Path::toString).collect(joining(", ")));
+        LOG.debug("setAllMonitoredPaths: {}", allMonitoredPaths.stream().map(Path::toString).collect(joining(", ")));
     }
 
     @Override
@@ -121,27 +143,27 @@ class GitService implements VersioningService
         }
         final ObjectId latest = gitOperations.getCurrentHead();
         if (latest.equals(latestKnownObjectId.get())) {
-            LOG.debug("SHA didn't change");
+            LOG.trace("SHA didn't change");
             return empty();
         }
-        LOG.info("newest SHA = %s ", latest.toString());
+        LOG.info("newest SHA = {}", latest.toString());
 
         final Set<String> allAffected = gitOperations.affectedFiles(
                 ImmutableList.copyOf(allMonitoredPaths), latestKnownObjectId.get(), latest);
-        LOG.info("Affected paths = %s ", allAffected.stream().collect(joining(", ")));
+        LOG.info("Affected paths = {}", allAffected.stream().collect(joining(", ")));
         final Set<Path> affectedFiles = allAffected
                 .stream()
                 .map(Paths::get)
                 .filter(allMonitoredPaths::contains)
                 .collect(toSet());
         final String absolute = affectedFiles.stream().map(Path::toString).collect(joining(", "));
-        LOG.info("Affected absolute paths = %s ", absolute);
+        LOG.info("Affected absolute paths = {}", absolute);
         final Optional<VersionedConfigUpdate> update;
         if (affectedFiles.isEmpty()) {
-            LOG.debug("Update " + latest + " doesn't affect any paths I care about");
+            LOG.debug("Update {} doesn't affect any paths I care about", latest);
             update = empty();
         } else {
-            LOG.info("Update " + latest + " is relevant to my interests");
+            LOG.info("Update {} is relevant to my interests", latest);
             update = Optional.of(new VersionedConfigUpdate(
                     checkoutDirectory, affectedFiles, copyOf(allMonitoredPaths), latest.toString())
             );
@@ -170,5 +192,15 @@ class GitService implements VersioningService
             return trimmed.substring(1);
         }
         return trimmed;
+    }
+
+    @Override
+    @OnStage(LifecycleStage.STOP)
+    public void close() throws IOException {
+        if (serviceConfig.localConfigRepository() != null) {
+            return;
+        }
+
+        Files.walkFileTree(checkoutDirectory, DeleteRecursively.INSTANCE);
     }
 }
