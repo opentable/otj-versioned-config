@@ -66,7 +66,7 @@ final class GitOperations {
                     .setCredentialsProvider(credentials)
                     .setBranch(cloneBranch)
                     .setDirectory(checkoutDir.toFile())
-                    .setURI(serviceConfig.remoteConfigRepository().toString())
+                    .setURI(cloneSource)
                     .call();
         } catch(GitAPIException ioe) {
             throw new VersioningServiceException("Could not clone repo", ioe);
