@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -77,7 +76,7 @@ class GitService implements VersioningService
                     .map(Paths::get)
                     .collect(toList());
             LOG.info("hardwired paths = {}", initialPaths.stream().map(Path::toString).collect(joining(", ")));
-            this.allMonitoredPaths = new HashSet<>(initialPaths); // initially
+            this.allMonitoredPaths = copyOf(initialPaths); // initially
         } catch (IOException exception) {
             throw new VersioningServiceException("Configuration initialization failed, application can't start", exception);
         }
@@ -108,7 +107,7 @@ class GitService implements VersioningService
                 .map(Object::toString)
                 .map(this::cleanPath)
                 .map(Paths::get);
-        this.allMonitoredPaths = Stream.concat(initialPaths.stream(), stream).collect(toSet());
+        this.allMonitoredPaths = copyOf(Stream.concat(initialPaths.stream(), stream).collect(toSet()));
         LOG.debug("setAllMonitoredPaths: {}", allMonitoredPaths.stream().map(Path::toString).collect(joining(", ")));
     }
 
