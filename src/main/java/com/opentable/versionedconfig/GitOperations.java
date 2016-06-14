@@ -137,11 +137,10 @@ final class GitOperations {
         }
     }
 
-    Set<String> affectedFiles(List<Path> filesRelativeToGitRepo, ObjectId oldId, ObjectId newId) throws VersioningServiceException {
+    Set<String> affectedFiles(ObjectId oldId, ObjectId newId) throws VersioningServiceException {
         final List<DiffEntry> diffEntries = affectedFilesBetweenCommits(oldId, newId);
         final Set<String> items = diffEntries.stream()
                 .map(this::relevantDiffPath)
- //               .filter(filesRelativeToGitRepo::contains)
                 .collect(toSet());
         return ImmutableSet.copyOf(items);
     }

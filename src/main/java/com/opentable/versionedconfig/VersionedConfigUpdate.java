@@ -1,7 +1,5 @@
 package com.opentable.versionedconfig;
 
-import static java.util.stream.Collectors.toSet;
-
 import java.nio.file.Path;
 import java.util.Set;
 
@@ -15,11 +13,6 @@ public final class VersionedConfigUpdate {
     private final Path basePath;
 
     /**
-     * All paths known by the versioning service
-     */
-    private final Set<Path> allKnownFiles;
-
-    /**
      * subset of allPaths affected by this update
      */
     private final Set<Path> changedFiles;
@@ -29,10 +22,9 @@ public final class VersionedConfigUpdate {
      */
     private final String revision;
 
-    public VersionedConfigUpdate(Path basePath, Set<Path> changedFiles, Set<Path> allKnownFiles, String revision) {
+    public VersionedConfigUpdate(Path basePath, Set<Path> changedFiles, String revision) {
         this.basePath = basePath;
         this.changedFiles = changedFiles;
-        this.allKnownFiles = allKnownFiles;
         this.revision = revision;
     }
 
@@ -44,19 +36,7 @@ public final class VersionedConfigUpdate {
         return changedFiles;
     }
 
-    public Set<Path> getAllKnownFiles() {
-        return allKnownFiles;
-    }
-
     public String getRevision() {
         return revision;
     }
-
-    /**
-     * @return all known paths as absolute paths (i.e. including basePath)
-     */
-    public Set<Path> getAllAbsolutePaths() {
-        return allKnownFiles.stream().map(basePath::resolve).collect(toSet());
-    }
-
 }

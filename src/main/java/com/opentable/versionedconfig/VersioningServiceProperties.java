@@ -2,7 +2,6 @@ package com.opentable.versionedconfig;
 
 import java.io.File;
 import java.net.URI;
-import java.util.List;
 
 import org.skife.config.Config;
 import org.skife.config.Default;
@@ -45,11 +44,4 @@ interface VersioningServiceProperties
     @Config("config.repo.branch")
     @Default("master")
     String configBranch();
-
-    /**
-     * @return Which configuration files(s) to read, comma-separated if more than one
-     */
-    @Config("config.repo.file")
-    @Default("")
-    List<String> configFiles();
 }
