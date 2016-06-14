@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!--
+  This is the default logging setup for Java Mesos applications.
+
+  If more/less logging is required, enable disable it on a per service basis.
+-->
+
+<configuration threshold="TRACE">
+  <property scope="context" name="LOG_DIR" value="${MESOS_SANDBOX:-.}/logs" />
+  <property scope="context" name="LOG_EVENT_CLASS" value="${LOG_EVENT_CLASS:-com.opentable.logging.HttpLogFields}" />
+
+  <jmxConfigurator />
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <filter class="ch.qos.logback.classic.filter.LevelFilter">
+      <level>ALL</level>
+      <onMatch>DENY</onMatch>
+      <onMismatch>ACCEPT</onMismatch>
+    </filter>
+    <encoder>
+      <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSS'Z'} %-5p &lt;%X{ot-requestid}&gt; [%t] %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <!-- Rolling access log -->
+  <appender name="ACCESS" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <filter class="ch.qos.logback.classic.filter.LevelFilter">
+      <level>ALL</level>
+      <onMatch>ACCEPT</onMatch>
+      <onMismatch>DENY</onMismatch>
+    </filter>
+
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <!-- daily rollover -->
+      <fileNamePattern>${LOG_DIR}/access.%d{yyyy-MM-dd-HH}.log.gz</fileNamePattern>
+
+      <!-- keep 30 days' worth of history -->
+      <maxHistory>30</maxHistory>
+    </rollingPolicy>
+
+    <encoder>
+      <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSS'Z'} &lt;%X{ot-requestid}&gt; [%t] %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <!-- Rolling application log -->
+  <appender name="APP" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <filter class="ch.qos.logback.classic.filter.LevelFilter">
+      <level>ALL</level>
+      <onMatch>DENY</onMatch>
+      <onMismatch>ACCEPT</onMismatch>
+    </filter>
+
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <!-- daily rollover -->
+      <fileNamePattern>${LOG_DIR}/application.%d{yyyy-MM-dd-HH}.log.gz</fileNamePattern>
+
+      <!-- keep 30 days' worth of history -->
+      <maxHistory>30</maxHistory>
+    </rollingPolicy>
+
+    <encoder>
+      <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSS'Z'} %-5p &lt;%X{ot-requestid}&gt; [%t] %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="KAFKA" class="com.opentable.logging.KafkaAppender">
+    <encoder class="com.opentable.logging.JsonLogEncoder">
+      <customEventClass>${LOG_EVENT_CLASS}</customEventClass>
+    </encoder>
+    <brokerList>${BROKER_LIST}</brokerList> <!-- This is set in ENV-*/jvm.properties -->
+    <topic>logstash</topic>
+    <clientId>${TASK_REQUEST_ID:-${OT_APP}}-${INSTANCE_NO:-0}-${TASK_HOST:-${HOSTNAME}}</clientId>
+  </appender>
+
+  <appender name="ASYNC-KAFKA" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="KAFKA" />
+    <queueSize>4096</queueSize>
+  </appender>
+
+  <!-- Default is DEBUG for our stuff, INFO for everything else -->
+  <logger name="com.opentable" level="DEBUG" />
+
+  <!-- Discovery is uninteresting when it's working right -->
+  <logger name="com.opentable.service.discovery" level="INFO" />
+  <!-- HttpClient is pretty verbose -->
+  <logger name="com.opentable.httpclient.factory" level="INFO" />
+  <!-- DefaultRedirectStrategy prints out a DEBUG for every redirect... -->
+  <logger name="com.opentable.etcd.AlwaysRedirectStrategy" level="INFO" />
+
+  <root level="INFO">
+    <appender-ref ref="CONSOLE" />
+    <appender-ref ref="APP" />
+    <appender-ref ref="ACCESS" />
+    <appender-ref ref="ASYNC-KAFKA" />
+  </root>
+
+  <include resource="logback-config.xml" optional="true" />
+</configuration>
