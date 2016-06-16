@@ -10,17 +10,18 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.inject.Inject;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-
 import org.eclipse.jgit.lib.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,7 @@ class GitService implements VersioningService
 
     private final Path checkoutDirectory;
     private final VersioningServiceProperties serviceConfig;
-    private final Set<Path> hardwiredPaths;
+    private final List<Path> hardwiredPaths;
 
     /**
      * filenames relative to checkoutDirectory which we want to keep an eye on
@@ -68,9 +69,9 @@ class GitService implements VersioningService
             this.hardwiredPaths = serviceConfig.configFiles().stream()
                     .map(this::cleanPath)
                     .map(Paths::get)
-                    .collect(toSet());
+                    .collect(Collectors.toList());
             LOG.info("hardwired paths = {}", hardwiredPaths.stream().map(Path::toString).collect(joining(", ")));
-            this.monitoredFiles = hardwiredPaths; // initially
+            this.monitoredFiles = new HashSet<>(hardwiredPaths); // initially
         } catch (IOException exception) {
             throw new VersioningServiceException("Configuration initialization failed, application can't start", exception);
         }
@@ -108,14 +109,14 @@ class GitService implements VersioningService
     @Override
     public VersionedConfigUpdate getInitialState() {
         return new VersionedConfigUpdate(
-                checkoutDirectory, copyOf(hardwiredPaths), copyOf(hardwiredPaths), latestKnownObjectId.toString()
+                checkoutDirectory, hardwiredPaths, copyOf(hardwiredPaths), copyOf(hardwiredPaths), latestKnownObjectId.toString()
         );
     }
 
     @Override
     public VersionedConfigUpdate getCurrentState() {
         return new VersionedConfigUpdate(
-                checkoutDirectory, ImmutableSet.of(), copyOf(monitoredFiles), latestKnownObjectId.toString());
+                checkoutDirectory, hardwiredPaths, ImmutableSet.of(), copyOf(monitoredFiles), latestKnownObjectId.toString());
     }
 
     /**
@@ -158,7 +159,7 @@ class GitService implements VersioningService
         } else {
             LOG.info("Update {} is relevant to my interests", latest);
             update = Optional.of(new VersionedConfigUpdate(
-                    checkoutDirectory, affectedFiles, copyOf(monitoredFiles), latest.toString())
+                    checkoutDirectory, hardwiredPaths, affectedFiles, copyOf(monitoredFiles), latest.toString())
             );
         }
         latestKnownObjectId.set(latest);
