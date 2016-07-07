@@ -39,7 +39,7 @@ final class GitOperations {
     private final CredentialsProvider credentials;
 
     GitOperations(final VersioningServiceProperties serviceConfig, Path checkoutDir) throws VersioningServiceException, IOException {
-        this.credentials = new UsernamePasswordCredentialsProvider(serviceConfig.repoUsername(), serviceConfig.repoPassword());
+        this.credentials = new UsernamePasswordCredentialsProvider(serviceConfig.getRepoUsername(), serviceConfig.getRepoPassword());
         this.git = openRepo(serviceConfig, checkoutDir);
     }
 
@@ -56,8 +56,8 @@ final class GitOperations {
         } else {
             LOG.info("checkout directory {} does not yet exist", checkoutDir);
         }
-        final String cloneSource = cloningUriToGitArgument(serviceConfig.remoteConfigRepository());
-        final String cloneBranch = serviceConfig.configBranch();
+        final String cloneSource = cloningUriToGitArgument(serviceConfig.getRemoteConfigRepository());
+        final String cloneBranch = serviceConfig.getConfigBranch();
         LOG.info("cloning {} (branch {}) to {}", cloneSource, cloneBranch, checkoutDir);
 
         try {

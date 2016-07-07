@@ -192,7 +192,7 @@ public class GitServiceIT
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
         final ImmutableList<String> filenamesOfInterest = of("integrationtest/mappings.cfg.tsv");
-        Mockito.when(versioningServiceProperties.configFiles()).thenReturn(filenamesOfInterest);
+        Mockito.when(versioningServiceProperties.getConfigFiles()).thenReturn(filenamesOfInterest);
 
         final VersioningService service = new GitService(versioningServiceProperties);
         final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
@@ -233,13 +233,13 @@ public class GitServiceIT
         }
         source = URI.create("https://github.com/opentable/service-ot-frontdoor-config");
         final VersioningServiceProperties versioningServiceProperties = mock(VersioningServiceProperties.class);
-        Mockito.when(versioningServiceProperties.remoteConfigRepository()).thenReturn(source);
-        Mockito.when(versioningServiceProperties.configBranch()).thenReturn("master");
-        Mockito.when(versioningServiceProperties.configFiles()).thenReturn(of("integrationtest/mappings.cfg.tsv"));
-        Mockito.when(versioningServiceProperties.repoUsername()).thenReturn(githubAuthKey);
-        Mockito.when(versioningServiceProperties.repoPassword()).thenReturn("x-oauth-basic");
+        Mockito.when(versioningServiceProperties.getRemoteConfigRepository()).thenReturn(source);
+        Mockito.when(versioningServiceProperties.getConfigBranch()).thenReturn("master");
+        Mockito.when(versioningServiceProperties.getConfigFiles()).thenReturn(of("integrationtest/mappings.cfg.tsv"));
+        Mockito.when(versioningServiceProperties.getRepoUsername()).thenReturn(githubAuthKey);
+        Mockito.when(versioningServiceProperties.getRepoPassword()).thenReturn("x-oauth-basic");
 
-        Mockito.when(versioningServiceProperties.localConfigRepository()).thenReturn(checkoutSpot);
+        Mockito.when(versioningServiceProperties.getLocalConfigRepository()).thenReturn(checkoutSpot);
         return versioningServiceProperties;
     }
 }

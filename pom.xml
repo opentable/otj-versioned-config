@@ -5,8 +5,8 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.opentable</groupId>
-    <artifactId>otj-parent</artifactId>
-    <version>49</version>
+    <artifactId>otj-parent-spring</artifactId>
+    <version>55</version>
   </parent>
 
   <scm>
@@ -19,7 +19,7 @@
   <groupId>com.opentable.components</groupId>
   <artifactId>otj-versioned-config</artifactId>
   <name>otj-versioned-config</name>
-  <version>2.2.1-SNAPSHOT</version>
+  <version>3.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <description>component for polling configuration information from git.</description>
 
@@ -40,19 +40,8 @@
     </dependency>
 
     <dependency>
-      <groupId>com.opentable.components</groupId>
-      <artifactId>otj-lifecycle-guice</artifactId>
-      <optional>true</optional>
-    </dependency>
-
-    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.google.inject</groupId>
-      <artifactId>guice</artifactId>
     </dependency>
 
     <dependency>
@@ -61,13 +50,14 @@
     </dependency>
 
     <dependency>
-      <groupId>org.skife.config</groupId>
-      <artifactId>config-magic</artifactId>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-beans</artifactId>
+      <optional>true</optional>
     </dependency>
-
     <dependency>
-      <groupId>com.opentable.components</groupId>
-      <artifactId>otj-config-guice</artifactId>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+      <optional>true</optional>
     </dependency>
 
     <dependency>
@@ -95,7 +85,6 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>1.9.5</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
