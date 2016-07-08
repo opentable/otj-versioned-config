@@ -5,7 +5,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -28,7 +27,6 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -192,7 +190,7 @@ public class GitServiceIT
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
         final ImmutableList<String> filenamesOfInterest = of("integrationtest/mappings.cfg.tsv");
-        Mockito.when(versioningServiceProperties.getConfigFiles()).thenReturn(filenamesOfInterest);
+        versioningServiceProperties.setConfigFiles(filenamesOfInterest);
 
         final VersioningService service = new GitService(versioningServiceProperties);
         final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
@@ -232,14 +230,11 @@ public class GitServiceIT
             return null;
         }
         source = URI.create("https://github.com/opentable/service-ot-frontdoor-config");
-        final VersioningServiceProperties versioningServiceProperties = mock(VersioningServiceProperties.class);
-        Mockito.when(versioningServiceProperties.getRemoteConfigRepository()).thenReturn(source);
-        Mockito.when(versioningServiceProperties.getConfigBranch()).thenReturn("master");
-        Mockito.when(versioningServiceProperties.getConfigFiles()).thenReturn(of("integrationtest/mappings.cfg.tsv"));
-        Mockito.when(versioningServiceProperties.getRepoUsername()).thenReturn(githubAuthKey);
-        Mockito.when(versioningServiceProperties.getRepoPassword()).thenReturn("x-oauth-basic");
-
-        Mockito.when(versioningServiceProperties.getLocalConfigRepository()).thenReturn(checkoutSpot);
-        return versioningServiceProperties;
+        return new VersioningServiceProperties().setRemoteConfigRepository(source)
+            .setConfigBranch("master")
+            .setConfigFiles(of("integrationtest/mappings.cfg.tsv"))
+            .setRepoUsername(githubAuthKey)
+            .setRepoPassword("x-oauth-basic")
+            .setLocalConfigRepository(checkoutSpot);
     }
 }
