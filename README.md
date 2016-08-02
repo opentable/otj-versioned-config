@@ -6,22 +6,27 @@ Component for reading and polling for configuration from git.
 Usage
 -----
 
-* In your project's Guice configure method, install a new VersionedConfigModule
-* Bind an implementation of ConfigUpdateAction. This will handle update events whenever configuration updates are detected. The VersionedConfigModule will require a ConfigUpdateAction implementation to exist when Guice initializes it.
-* Also make sure you bind a ConfigProvider that will provide an instance of VersioningServiceProperties (or a subclass thereof), e.g.:
-``` 
-bind(ConfigUpdateAction.class)
-    .to(MyConfigUpdateHandler.class);
-bind(VersioningServiceProperties.class)
-    .toProvider(ConfigProvider.of(VersioningServiceProperties.class));
+For Spring projects, in your configuration classes just import VersionedConfig.  This will automatically determine the
+Git repository to watch via application properties, and provide a `VersioningService` that tracks changes.
+
+You can also configure it manually if you prefer:
+```java
+VersioningService config = VersioningService.forGitRepo(
+    new VersioningServiceProperties()
+        .setRemoteConfigRepository("http://git.somewhere.com/..."));
 ```
-  This will read from the properties specified in the config file referenced by the system property ot.config.location
 
 How it works
 ------------
-The ConfigPollingService will spin up a single thread executor that pulls on the configured git repo periodically. By default this happens every 30 seconds but you can configure this to whatever you want.
+The VersioningService maintains a local clone of the remote Git repository.
+Any time you call `checkForUpdate()`, it will do a fetch of the remote repository,
+and indicate whether any changes were found.
 
-After pulling we probe the configuration path to see if its HEAD SHA has changed. If so, we open the file to read and pass the input stream back to the configured ConfigUpdateAction implementation for processing, so that your application can do whatever it needs to do with the new configuration data.
+At any time you may invoke `getCurrentState()` or `getLatestRevision()` to get the
+state of the *local* repository.
+
+Remember to `close()` your versioning service when you are done with it to clean
+up the local checkout.  (This is done for you if you use the Spring integration.)
 
 Configuration Properties
 ------------------------
