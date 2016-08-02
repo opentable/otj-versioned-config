@@ -17,4 +17,8 @@ public interface VersioningService extends Closeable {
     Path getCheckoutDirectory();
 
     String getLatestRevision();
+
+    static VersioningService forGitRepository(VersioningServiceProperties config) {
+        return new GitService(config);
+    }
 }

@@ -5,7 +5,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -28,7 +27,6 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,8 +51,9 @@ public class GitServiceIT
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("init");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
-        final VersioningService service = new GitService(versioningServiceProperties);
-        assertTrue("checkout directory should exist", checkoutSpot.exists());
+        try (final VersioningService service = new GitService(versioningServiceProperties)) {
+            assertTrue("checkout directory should exist", checkoutSpot.exists());
+        }
     }
 
     @Test
@@ -62,8 +61,9 @@ public class GitServiceIT
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("update");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
-        final VersioningService service = new GitService(versioningServiceProperties);
-        service.checkForUpdate();
+        try (final VersioningService service = new GitService(versioningServiceProperties)) {
+            service.checkForUpdate();
+        }
     }
 
     @Test
@@ -73,11 +73,11 @@ public class GitServiceIT
         final File checkoutSpot = workFolder.newFolder("get");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
 
-        final VersioningService service = new GitService(versioningServiceProperties);
-
-        final Optional<VersionedConfigUpdate> update = service.checkForUpdate();
-        assertFalse(update.isPresent());
-        // this is right after cloning so of course nothing has changed when we pull
+        try (final VersioningService service = new GitService(versioningServiceProperties)) {
+            final Optional<VersionedConfigUpdate> update = service.checkForUpdate();
+            assertFalse(update.isPresent());
+            // this is right after cloning so of course nothing has changed when we pull
+        }
     }
 
     @Test
@@ -86,14 +86,15 @@ public class GitServiceIT
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
 
-        final VersioningService service = new GitService(versioningServiceProperties);
-        final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
+        try (final VersioningService service = new GitService(versioningServiceProperties)) {
+            final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
 
-        blurtRandomRepoChange(checkoutSpot, "someotherfile");
+            blurtRandomRepoChange(checkoutSpot, "someotherfile");
 
-        final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
-        assertFalse(firstUpdate.isPresent());
-        assertFalse(secondUpdate.isPresent());  // no updates we care about here, sir
+            final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
+            assertFalse(firstUpdate.isPresent());
+            assertFalse(secondUpdate.isPresent());  // no updates we care about here, sir
+        }
     }
 
     @Test
@@ -102,14 +103,15 @@ public class GitServiceIT
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
 
-        final VersioningService service = new GitService(versioningServiceProperties);
-        final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
+        try (final VersioningService service = new GitService(versioningServiceProperties)) {
+            final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
 
-        blurtRandomRepoChange(checkoutSpot, "integrationtest/mappings.cfg.tsv");
+            blurtRandomRepoChange(checkoutSpot, "integrationtest/mappings.cfg.tsv");
 
-        final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
-        assertFalse(firstUpdate.isPresent());
-        assertTrue(secondUpdate.isPresent());
+            final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
+            assertFalse(firstUpdate.isPresent());
+            assertTrue(secondUpdate.isPresent());
+        }
     }
 
     @Test
@@ -118,25 +120,26 @@ public class GitServiceIT
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
 
-        final VersioningService service = new GitService(versioningServiceProperties);
-        final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
-        assertFalse(firstUpdate.isPresent());
+        try (final VersioningService service = new GitService(versioningServiceProperties)) {
+            final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
+            assertFalse(firstUpdate.isPresent());
 
-        // we don't know about this file, so changing it will not result in an update yet
-        blurtRandomRepoChange(checkoutSpot, "integrationtest/things.txt");
-        final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
-        assertFalse(secondUpdate.isPresent());
+            // we don't know about this file, so changing it will not result in an update yet
+            blurtRandomRepoChange(checkoutSpot, "integrationtest/things.txt");
+            final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
+            assertFalse(secondUpdate.isPresent());
 
-        // ok let's start watching it then make a change
-        final Set<Path> paths = ImmutableSet.of(Paths.get("integrationtest/things.txt"));
-        service.setMonitoredFiles(paths);
-        blurtRandomRepoChange(checkoutSpot, "integrationtest/things.txt");
+            // ok let's start watching it then make a change
+            final Set<Path> paths = ImmutableSet.of(Paths.get("integrationtest/things.txt"));
+            service.setMonitoredFiles(paths);
+            blurtRandomRepoChange(checkoutSpot, "integrationtest/things.txt");
 
-        final Optional<VersionedConfigUpdate> thirdUpdate = service.checkForUpdate();
-        assertTrue(thirdUpdate.isPresent());
-        final Set<Path> alteredPaths = thirdUpdate.get().getChangedFiles();
-        assertEquals(checkoutSpot.toPath(), thirdUpdate.get().getBasePath());
-        assertTrue(alteredPaths.contains(Paths.get("integrationtest/things.txt")));
+            final Optional<VersionedConfigUpdate> thirdUpdate = service.checkForUpdate();
+            assertTrue(thirdUpdate.isPresent());
+            final Set<Path> alteredPaths = thirdUpdate.get().getChangedFiles();
+            assertEquals(checkoutSpot.toPath(), thirdUpdate.get().getBasePath());
+            assertTrue(alteredPaths.contains(Paths.get("integrationtest/things.txt")));
+        }
     }
 
     @Test
@@ -145,21 +148,19 @@ public class GitServiceIT
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
 
-        final VersioningService service = new GitService(versioningServiceProperties);
+        try (final VersioningService service = new GitService(versioningServiceProperties)) {
+            // make a change to a file dont know about. will trigger update
+            blurtRandomRepoChange(checkoutSpot, "integrationtest/mappings.cfg.tsv");
+            final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
+            assertTrue(firstUpdate.isPresent());
 
-        // make a change to a file dont know about. will trigger update
-        blurtRandomRepoChange(checkoutSpot, "integrationtest/mappings.cfg.tsv");
-        final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
-        assertTrue(firstUpdate.isPresent());
+            // make a change to our original file
+            blurtRandomRepoChange(checkoutSpot, "integrationtest/mappings.cfg.tsv");
 
-        // try to forget it, just look at something else
-        final Set<Path> paths = ImmutableSet.of(Paths.get("someotherfile/whatever"));
-        // make a change to our original file
-        blurtRandomRepoChange(checkoutSpot, "integrationtest/mappings.cfg.tsv");
-
-        // it;s hardwired, we have an update whether we like it or not
-        final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
-        assertTrue(secondUpdate.isPresent());
+            // it's hardwired, we have an update whether we like it or not
+            final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
+            assertTrue(secondUpdate.isPresent());
+        }
     }
 
     @Test
@@ -168,22 +169,22 @@ public class GitServiceIT
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
 
-        final VersioningService service = new GitService(versioningServiceProperties);
+        try (final VersioningService service = new GitService(versioningServiceProperties)) {
+            // make a change to a file we know about. should trigger update
+            blurtRandomRepoChange(checkoutSpot, "integrationtest/mappings.cfg.tsv");
+            final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
+            assertTrue(firstUpdate.isPresent());
 
-        // make a change to a file we know about. should trigger update
-        blurtRandomRepoChange(checkoutSpot, "integrationtest/mappings.cfg.tsv");
-        final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
-        assertTrue(firstUpdate.isPresent());
+            // just pay attention to new file
+            service.setMonitoredFiles(ImmutableSet.of(Paths.get("integrationtest/whatever")));
+            blurtRandomRepoChange(checkoutSpot, "integrationtest/whatever");
+            assertTrue(service.checkForUpdate().isPresent());
 
-        // just pay attention to new file
-        service.setMonitoredFiles(ImmutableSet.of(Paths.get("integrationtest/whatever")));
-        blurtRandomRepoChange(checkoutSpot, "integrationtest/whatever");
-        assertTrue(service.checkForUpdate().isPresent());
-
-        // now forget it, write it, and be oblivious
-        service.setMonitoredFiles(ImmutableSet.of(Paths.get("integrationtest/mappings.cfg.tsv")));
-        blurtRandomRepoChange(checkoutSpot, "integrationtest/whatever");
-        assertFalse(service.checkForUpdate().isPresent());
+            // now forget it, write it, and be oblivious
+            service.setMonitoredFiles(ImmutableSet.of(Paths.get("integrationtest/mappings.cfg.tsv")));
+            blurtRandomRepoChange(checkoutSpot, "integrationtest/whatever");
+            assertFalse(service.checkForUpdate().isPresent());
+        }
     }
 
     @Test
@@ -192,16 +193,17 @@ public class GitServiceIT
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
         final ImmutableList<String> filenamesOfInterest = of("integrationtest/mappings.cfg.tsv");
-        Mockito.when(versioningServiceProperties.configFiles()).thenReturn(filenamesOfInterest);
+        versioningServiceProperties.setConfigFiles(filenamesOfInterest);
 
-        final VersioningService service = new GitService(versioningServiceProperties);
-        final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
+        try (final VersioningService service = new GitService(versioningServiceProperties)) {
+            final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
 
-        blurtRandomRepoChange(checkoutSpot, "integrationtest/mappings.cfg.tsv");
+            blurtRandomRepoChange(checkoutSpot, "integrationtest/mappings.cfg.tsv");
 
-        final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
-        assertFalse(firstUpdate.isPresent());
-        assertTrue(secondUpdate.isPresent());
+            final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
+            assertFalse(firstUpdate.isPresent());
+            assertTrue(secondUpdate.isPresent());
+        }
     }
 
     private void blurtRandomRepoChange(File checkoutDir, String filename) throws IOException, GitAPIException {
@@ -232,14 +234,11 @@ public class GitServiceIT
             return null;
         }
         source = URI.create("https://github.com/opentable/service-ot-frontdoor-config");
-        final VersioningServiceProperties versioningServiceProperties = mock(VersioningServiceProperties.class);
-        Mockito.when(versioningServiceProperties.remoteConfigRepository()).thenReturn(source);
-        Mockito.when(versioningServiceProperties.configBranch()).thenReturn("master");
-        Mockito.when(versioningServiceProperties.configFiles()).thenReturn(of("integrationtest/mappings.cfg.tsv"));
-        Mockito.when(versioningServiceProperties.repoUsername()).thenReturn(githubAuthKey);
-        Mockito.when(versioningServiceProperties.repoPassword()).thenReturn("x-oauth-basic");
-
-        Mockito.when(versioningServiceProperties.localConfigRepository()).thenReturn(checkoutSpot);
-        return versioningServiceProperties;
+        return new VersioningServiceProperties().setRemoteConfigRepository(source)
+            .setConfigBranch("master")
+            .setConfigFiles(of("integrationtest/mappings.cfg.tsv"))
+            .setRepoUsername(githubAuthKey)
+            .setRepoPassword("x-oauth-basic")
+            .setLocalConfigRepository(checkoutSpot);
     }
 }

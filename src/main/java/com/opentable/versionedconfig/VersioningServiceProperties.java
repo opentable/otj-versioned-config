@@ -2,54 +2,102 @@ package com.opentable.versionedconfig;
 
 import java.io.File;
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 
-import org.skife.config.Config;
-import org.skife.config.Default;
-import org.skife.config.DefaultNull;
+import org.springframework.beans.factory.annotation.Value;
 
-interface VersioningServiceProperties
+class VersioningServiceProperties
 {
     /**
      * @return Where the configuration should be cloned from
      */
-    @Config("config.repo.remote")
-    URI remoteConfigRepository();
+    @Value("${config.repo.remote}")
+    private URI remoteConfigRepository;
 
     /**
      * @return Repo user name or auth key
      */
-    @Config("config.repo.username")
-    String repoUsername();
+    @Value("${config.repo.username}")
+    private String repoUsername;
 
     /**
      * @return Repo password or auth type
      */
-    @Config("config.repo.password")
-    @Default("x-oauth-basic")
-    String repoPassword();
-
+    @Value("${config.repo.password:x-oauth-basic}")
+    private String repoPassword = "x-oauth-basic";
 
     /**
      * Where the configuration should be cloned to, in the local filesystem.
      * If left to the null default, will create a temporary checkout that is destroyed
      * on close.
      */
-    @Config("config.repo.local")
-    @DefaultNull
-    File localConfigRepository();
+    @Value("${config.repo.local:#{null}}")
+    private File localConfigRepository;
 
     /**
      * @return Which configuration branch to read
      */
-    @Config("config.repo.branch")
-    @Default("master")
-    String configBranch();
+    @Value("${config.repo.branch:master}")
+    private String configBranch = "master";
 
     /**
      * @return Which configuration files(s) to read, comma-separated if more than one
      */
-    @Config("config.repo.file")
-    @Default("")
-    List<String> configFiles();
+    @Value("${config.repo.file:}")
+    private List<String> configFiles = Collections.emptyList();
+
+    public VersioningServiceProperties setRemoteConfigRepository(URI remoteConfigRepository) {
+        this.remoteConfigRepository = remoteConfigRepository;
+        return this;
+    }
+
+    public VersioningServiceProperties setRepoUsername(String repoUsername) {
+        this.repoUsername = repoUsername;
+        return this;
+    }
+
+    public VersioningServiceProperties setRepoPassword(String repoPassword) {
+        this.repoPassword = repoPassword;
+        return this;
+    }
+
+    public VersioningServiceProperties setLocalConfigRepository(File localConfigRepository) {
+        this.localConfigRepository = localConfigRepository;
+        return this;
+    }
+
+    public VersioningServiceProperties setConfigBranch(String configBranch) {
+        this.configBranch = configBranch;
+        return this;
+    }
+
+    public VersioningServiceProperties setConfigFiles(List<String> configFiles) {
+        this.configFiles = configFiles;
+        return this;
+    }
+
+    public URI getRemoteConfigRepository() {
+        return remoteConfigRepository;
+    }
+
+    public String getRepoUsername() {
+        return repoUsername;
+    }
+
+    public String getRepoPassword() {
+        return repoPassword;
+    }
+
+    public File getLocalConfigRepository() {
+        return localConfigRepository;
+    }
+
+    public String getConfigBranch() {
+        return configBranch;
+    }
+
+    public List<String> getConfigFiles() {
+        return configFiles;
+    }
 }

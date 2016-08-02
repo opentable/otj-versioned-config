@@ -17,18 +17,19 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.annotation.PreDestroy;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.inject.Inject;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+
 import org.eclipse.jgit.lib.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.opentable.io.DeleteRecursively;
-import com.opentable.lifecycle.LifecycleStage;
-import com.opentable.lifecycle.guice.OnStage;
 
 /**
  * Responsible for noticing when service configuration has been updated
@@ -61,12 +62,12 @@ class GitService implements VersioningService
         try {
             this.gitOperations = new GitOperations(serviceConfig, checkoutDirectory);
 
-            gitOperations.checkoutBranch(serviceConfig.configBranch());
+            gitOperations.checkoutBranch(serviceConfig.getConfigBranch());
             this.latestKnownObjectId = new AtomicReference<>(gitOperations.getCurrentHead());
             LOG.info("latest SHA = {}", latestKnownObjectId.get());
 
             this.serviceConfig = serviceConfig;
-            this.hardwiredPaths = serviceConfig.configFiles().stream()
+            this.hardwiredPaths = serviceConfig.getConfigFiles().stream()
                     .map(this::cleanPath)
                     .map(Paths::get)
                     .collect(Collectors.toList());
@@ -78,7 +79,7 @@ class GitService implements VersioningService
     }
 
     private Path getCheckoutPath(VersioningServiceProperties serviceConfig) {
-        final File configuredFile = serviceConfig.localConfigRepository();
+        final File configuredFile = serviceConfig.getLocalConfigRepository();
         if (configuredFile != null) {
             return configuredFile.toPath();
         }
@@ -185,9 +186,9 @@ class GitService implements VersioningService
     }
 
     @Override
-    @OnStage(LifecycleStage.STOP)
+    @PreDestroy
     public void close() throws IOException {
-        if (serviceConfig.localConfigRepository() != null) {
+        if (serviceConfig.getLocalConfigRepository() != null) {
             return;
         }
 
