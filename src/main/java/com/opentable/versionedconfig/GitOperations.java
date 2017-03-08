@@ -151,11 +151,6 @@ final class GitOperations {
         return diff.getOldPath();
     }
 
-    /**
-     * What an atrocious API is JGit. All this garbage to get the affected files between
-     * two commits. How come I can't just call something like List&lt;File&gt; diffPaths(SHA commit1, SHA commit2)
-     * and call it a day? All this is just gross!
-     */
     List<DiffEntry> affectedFilesBetweenCommits(ObjectId oldId, ObjectId headId) throws VersioningServiceException {
         final Repository repo = git.getRepository();
         try (RevWalk walk = new RevWalk(repo)) {
