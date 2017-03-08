@@ -1,7 +1,5 @@
 package com.opentable.versionedconfig;
 
-import static java.util.stream.Collectors.toSet;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -10,6 +8,7 @@ import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -137,12 +136,11 @@ final class GitOperations {
         }
     }
 
-    Set<String> affectedFiles(List<Path> filesRelativeToGitRepo, ObjectId oldId, ObjectId newId) throws VersioningServiceException {
+    Set<String> affectedFiles(ObjectId oldId, ObjectId newId) throws VersioningServiceException {
         final List<DiffEntry> diffEntries = affectedFilesBetweenCommits(oldId, newId);
         final Set<String> items = diffEntries.stream()
                 .map(this::relevantDiffPath)
- //               .filter(filesRelativeToGitRepo::contains)
-                .collect(toSet());
+                .collect(Collectors.toSet());
         return ImmutableSet.copyOf(items);
     }
 
@@ -160,17 +158,17 @@ final class GitOperations {
      */
     List<DiffEntry> affectedFilesBetweenCommits(ObjectId oldId, ObjectId headId) throws VersioningServiceException {
         final Repository repo = git.getRepository();
-        try (final RevWalk walk = new RevWalk(repo)) {
+        try (RevWalk walk = new RevWalk(repo)) {
             LOG.trace("trying to figure out difference between {} and {}", oldId.toString(), headId.toString());
 
             final CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
-            try (final ObjectReader oldReader = repo.newObjectReader()) {
+            try (ObjectReader oldReader = repo.newObjectReader()) {
                 final RevTree oldTree = walk.parseCommit(oldId).getTree();
                 oldTreeParser.reset(oldReader, oldTree.getId());
             }
 
             final CanonicalTreeParser newTreeParser = new CanonicalTreeParser();
-            try (final ObjectReader newReader = repo.newObjectReader()) {
+            try (ObjectReader newReader = repo.newObjectReader()) {
                 final RevTree newTree = walk.parseCommit(headId).getTree();
                 newTreeParser.reset(newReader, newTree.getId());
             }
