@@ -159,27 +159,20 @@ final class GitOperations {
      * and call it a day? All this is just gross!
      */
     List<DiffEntry> affectedFilesBetweenCommits(ObjectId oldId, ObjectId headId) throws VersioningServiceException {
-        try {
+        final Repository repo = git.getRepository();
+        try (final RevWalk walk = new RevWalk(repo)) {
             LOG.trace("trying to figure out difference between {} and {}", oldId.toString(), headId.toString());
-            final Repository repo = git.getRepository();
-            final RevWalk walk = new RevWalk(repo);
 
             final CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
-            final ObjectReader oldReader = repo.newObjectReader();
-            final RevTree oldTree = walk.parseCommit(oldId).getTree();
-            try {
+            try (final ObjectReader oldReader = repo.newObjectReader()) {
+                final RevTree oldTree = walk.parseCommit(oldId).getTree();
                 oldTreeParser.reset(oldReader, oldTree.getId());
-            } finally {
-                oldReader.release();
             }
 
             final CanonicalTreeParser newTreeParser = new CanonicalTreeParser();
-            final ObjectReader newReader = repo.newObjectReader();
-            final RevTree newTree = walk.parseCommit(headId).getTree();
-            try {
+            try (final ObjectReader newReader = repo.newObjectReader()) {
+                final RevTree newTree = walk.parseCommit(headId).getTree();
                 newTreeParser.reset(newReader, newTree.getId());
-            } finally {
-                newReader.release();
             }
 
             final List<DiffEntry> diffEntries = git.diff()
@@ -187,7 +180,7 @@ final class GitOperations {
                     .setNewTree(newTreeParser)
                     .call();
             return diffEntries;
-        } catch (GitAPIException|IOException e) {
+        } catch (GitAPIException | IOException e) {
             throw new VersioningServiceException("Can't get diff", e);
         }
     }
