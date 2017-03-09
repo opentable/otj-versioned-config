@@ -1,7 +1,5 @@
 package com.opentable.versionedconfig;
 
-import static com.google.common.collect.ImmutableList.of;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -11,13 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Optional;
-import java.util.Set;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -115,34 +107,6 @@ public class GitServiceIT
     }
 
     @Test
-    public void setMonitoredFiles_addNew() throws IOException, VersioningServiceException, GitAPIException {
-        workFolder.create();
-        final File checkoutSpot = workFolder.newFolder("otpl-deploy");
-        final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
-
-        try (final VersioningService service = new GitService(versioningServiceProperties)) {
-            final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
-            assertFalse(firstUpdate.isPresent());
-
-            // we don't know about this file, so changing it will not result in an update yet
-            blurtRandomRepoChange(checkoutSpot, "integrationtest/things.txt");
-            final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
-            assertFalse(secondUpdate.isPresent());
-
-            // ok let's start watching it then make a change
-            final Set<Path> paths = ImmutableSet.of(Paths.get("integrationtest/things.txt"));
-            service.setMonitoredFiles(paths);
-            blurtRandomRepoChange(checkoutSpot, "integrationtest/things.txt");
-
-            final Optional<VersionedConfigUpdate> thirdUpdate = service.checkForUpdate();
-            assertTrue(thirdUpdate.isPresent());
-            final Set<Path> alteredPaths = thirdUpdate.get().getChangedFiles();
-            assertEquals(checkoutSpot.toPath(), thirdUpdate.get().getBasePath());
-            assertTrue(alteredPaths.contains(Paths.get("integrationtest/things.txt")));
-        }
-    }
-
-    @Test
     public void setMonitoredFiles_cannotForgetHardWired() throws IOException, VersioningServiceException, GitAPIException {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
@@ -159,49 +123,6 @@ public class GitServiceIT
 
             // it's hardwired, we have an update whether we like it or not
             final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
-            assertTrue(secondUpdate.isPresent());
-        }
-    }
-
-    @Test
-    public void setMonitoredFiles_canForgetDynamic() throws IOException, VersioningServiceException, GitAPIException {
-        workFolder.create();
-        final File checkoutSpot = workFolder.newFolder("otpl-deploy");
-        final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
-
-        try (final VersioningService service = new GitService(versioningServiceProperties)) {
-            // make a change to a file we know about. should trigger update
-            blurtRandomRepoChange(checkoutSpot, "integrationtest/mappings.cfg.tsv");
-            final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
-            assertTrue(firstUpdate.isPresent());
-
-            // just pay attention to new file
-            service.setMonitoredFiles(ImmutableSet.of(Paths.get("integrationtest/whatever")));
-            blurtRandomRepoChange(checkoutSpot, "integrationtest/whatever");
-            assertTrue(service.checkForUpdate().isPresent());
-
-            // now forget it, write it, and be oblivious
-            service.setMonitoredFiles(ImmutableSet.of(Paths.get("integrationtest/mappings.cfg.tsv")));
-            blurtRandomRepoChange(checkoutSpot, "integrationtest/whatever");
-            assertFalse(service.checkForUpdate().isPresent());
-        }
-    }
-
-    @Test
-    public void filesWeCareAboutDontGetIgnoredEvenIfPrefixedWithSlashes() throws IOException, VersioningServiceException, GitAPIException {
-        workFolder.create();
-        final File checkoutSpot = workFolder.newFolder("otpl-deploy");
-        final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
-        final ImmutableList<String> filenamesOfInterest = of("integrationtest/mappings.cfg.tsv");
-        versioningServiceProperties.setConfigFiles(filenamesOfInterest);
-
-        try (final VersioningService service = new GitService(versioningServiceProperties)) {
-            final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
-
-            blurtRandomRepoChange(checkoutSpot, "integrationtest/mappings.cfg.tsv");
-
-            final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
-            assertFalse(firstUpdate.isPresent());
             assertTrue(secondUpdate.isPresent());
         }
     }
@@ -236,7 +157,6 @@ public class GitServiceIT
         source = URI.create("https://github.com/opentable/service-ot-frontdoor-config");
         return new VersioningServiceProperties().setRemoteConfigRepository(source)
             .setConfigBranch("master")
-            .setConfigFiles(of("integrationtest/mappings.cfg.tsv"))
             .setRepoUsername(githubAuthKey)
             .setRepoPassword("x-oauth-basic")
             .setLocalConfigRepository(checkoutSpot);

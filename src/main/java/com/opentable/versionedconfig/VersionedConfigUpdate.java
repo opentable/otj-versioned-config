@@ -1,73 +1,67 @@
 package com.opentable.versionedconfig;
 
-import static java.util.stream.Collectors.toSet;
-
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Carries around info about files touched by git updates
  */
 public final class VersionedConfigUpdate {
-    /**
-     * The base path of the checked out repository
-     */
+    /** The base path of the checked out repository */
     private final Path basePath;
 
-    /**
-     * All the configured paths specified by the config. (Never changes, used for
-     * client initialization. List because order is important.
-     */
-    private final List<Path> configuredPaths;
+    /** Subset of allKnownFiles affected by this update. */
+    private final Stream<Path> changedFiles;
 
-    /**
-     * All paths known by the versioning service
-     */
-    private final Set<Path> allKnownFiles;
+    /** Description of the VCS revisions that this change describes (e.g. SHA for git). */
+    private final String oldRevision, newRevision;
 
-    /**
-     * subset of allPaths affected by this update
-     */
-    private final Set<Path> changedFiles;
-
-    /**
-     * description of the VCS revision in which this change occurs (e.g. SHA for git)
-     */
-    private final String revision;
-
-    public VersionedConfigUpdate(Path basePath, List<Path> configuredPaths, Set<Path> changedFiles, Set<Path> allKnownFiles, String revision) {
+    public VersionedConfigUpdate(Path basePath, Stream<Path> changedFiles, String oldRevision, String newRevision) {
         this.basePath = basePath;
-        this.configuredPaths = configuredPaths;
         this.changedFiles = changedFiles;
-        this.allKnownFiles = allKnownFiles;
-        this.revision = revision;
+        this.oldRevision = oldRevision;
+        this.newRevision = newRevision;
     }
 
+    /**
+     * @return the local base path for the checkout
+     */
     public Path getBasePath() {
         return basePath;
     }
 
-    public Set<Path> getChangedFiles() {
+    /**
+     * @return a stream of the files changed in this diff
+     */
+    public Stream<Path> getChangedFiles() {
         return changedFiles;
     }
 
-    public Set<Path> getAllKnownFiles() {
-        return allKnownFiles;
-    }
-
-    public String getRevision() {
-        return revision;
+    /**
+     * @return a set of the files changed in this diff
+     */
+    public Set<Path> getChangedFilesSet() {
+        return changedFiles.collect(Collectors.toSet());
     }
 
     /**
-     * @return all known paths as absolute paths (i.e. including basePath)
+     * @return the start revision for this diff
      */
-    public Set<Path> getAllAbsolutePaths() {
-        return allKnownFiles.stream().map(basePath::resolve).collect(toSet());
+    @Nullable
+    public String getOldRevision() {
+        return oldRevision;
     }
 
-    public List<Path> getConfiguredPaths() {
-        return configuredPaths;
+    /**
+     * @return the end revision for this diff
+     */
+    @Nonnull
+    public String getNewRevision() {
+        return newRevision;
     }
 }

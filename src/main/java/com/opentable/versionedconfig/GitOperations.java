@@ -1,7 +1,5 @@
 package com.opentable.versionedconfig;
 
-import static java.util.stream.Collectors.toSet;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -10,6 +8,7 @@ import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -137,12 +136,11 @@ final class GitOperations {
         }
     }
 
-    Set<String> affectedFiles(List<Path> filesRelativeToGitRepo, ObjectId oldId, ObjectId newId) throws VersioningServiceException {
+    Set<String> affectedFiles(ObjectId oldId, ObjectId newId) throws VersioningServiceException {
         final List<DiffEntry> diffEntries = affectedFilesBetweenCommits(oldId, newId);
         final Set<String> items = diffEntries.stream()
                 .map(this::relevantDiffPath)
- //               .filter(filesRelativeToGitRepo::contains)
-                .collect(toSet());
+                .collect(Collectors.toSet());
         return ImmutableSet.copyOf(items);
     }
 
@@ -153,33 +151,21 @@ final class GitOperations {
         return diff.getOldPath();
     }
 
-    /**
-     * What an atrocious API is JGit. All this garbage to get the affected files between
-     * two commits. How come I can't just call something like List&lt;File&gt; diffPaths(SHA commit1, SHA commit2)
-     * and call it a day? All this is just gross!
-     */
     List<DiffEntry> affectedFilesBetweenCommits(ObjectId oldId, ObjectId headId) throws VersioningServiceException {
-        try {
+        final Repository repo = git.getRepository();
+        try (RevWalk walk = new RevWalk(repo)) {
             LOG.trace("trying to figure out difference between {} and {}", oldId.toString(), headId.toString());
-            final Repository repo = git.getRepository();
-            final RevWalk walk = new RevWalk(repo);
 
             final CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
-            final ObjectReader oldReader = repo.newObjectReader();
-            final RevTree oldTree = walk.parseCommit(oldId).getTree();
-            try {
+            try (ObjectReader oldReader = repo.newObjectReader()) {
+                final RevTree oldTree = walk.parseCommit(oldId).getTree();
                 oldTreeParser.reset(oldReader, oldTree.getId());
-            } finally {
-                oldReader.release();
             }
 
             final CanonicalTreeParser newTreeParser = new CanonicalTreeParser();
-            final ObjectReader newReader = repo.newObjectReader();
-            final RevTree newTree = walk.parseCommit(headId).getTree();
-            try {
+            try (ObjectReader newReader = repo.newObjectReader()) {
+                final RevTree newTree = walk.parseCommit(headId).getTree();
                 newTreeParser.reset(newReader, newTree.getId());
-            } finally {
-                newReader.release();
             }
 
             final List<DiffEntry> diffEntries = git.diff()
@@ -187,7 +173,7 @@ final class GitOperations {
                     .setNewTree(newTreeParser)
                     .call();
             return diffEntries;
-        } catch (GitAPIException|IOException e) {
+        } catch (GitAPIException | IOException e) {
             throw new VersioningServiceException("Can't get diff", e);
         }
     }

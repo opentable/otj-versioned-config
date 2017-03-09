@@ -2,8 +2,6 @@ package com.opentable.versionedconfig;
 
 import java.io.File;
 import java.net.URI;
-import java.util.Collections;
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 
@@ -41,12 +39,6 @@ class VersioningServiceProperties
     @Value("${config.repo.branch:master}")
     private String configBranch = "master";
 
-    /**
-     * @return Which configuration files(s) to read, comma-separated if more than one
-     */
-    @Value("${config.repo.file:}")
-    private List<String> configFiles = Collections.emptyList();
-
     public VersioningServiceProperties setRemoteConfigRepository(URI remoteConfigRepository) {
         this.remoteConfigRepository = remoteConfigRepository;
         return this;
@@ -72,11 +64,6 @@ class VersioningServiceProperties
         return this;
     }
 
-    public VersioningServiceProperties setConfigFiles(List<String> configFiles) {
-        this.configFiles = configFiles;
-        return this;
-    }
-
     public URI getRemoteConfigRepository() {
         return remoteConfigRepository;
     }
@@ -95,9 +82,5 @@ class VersioningServiceProperties
 
     public String getConfigBranch() {
         return configBranch;
-    }
-
-    public List<String> getConfigFiles() {
-        return configFiles;
     }
 }
