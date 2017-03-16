@@ -132,7 +132,7 @@ final class GitOperations {
                 throw new VersioningServiceException("specified branch has no HEAD");
             }
         } catch (IOException|GitAPIException e) {
-            throw new VersioningServiceException("specified branch has no commits");
+            throw new VersioningServiceException("specified branch has no commits", e);
         }
     }
 

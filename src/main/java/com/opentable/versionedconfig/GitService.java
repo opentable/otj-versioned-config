@@ -4,6 +4,7 @@ import static java.util.Optional.empty;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -125,6 +126,16 @@ class GitService implements VersioningService
     @Override
     public String getLatestRevision() {
         return latestKnownObjectId.get().toString();
+    }
+
+    @Override
+    public URI getRemoteRepository() {
+        return serviceConfig.getRemoteConfigRepository();
+    }
+
+    @Override
+    public String getBranch() {
+        return serviceConfig.getConfigBranch();
     }
 
     @Override

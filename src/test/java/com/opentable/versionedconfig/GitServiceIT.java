@@ -1,8 +1,7 @@
 package com.opentable.versionedconfig;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -44,7 +43,7 @@ public class GitServiceIT
         final File checkoutSpot = workFolder.newFolder("init");
         final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
         try (final VersioningService service = new GitService(versioningServiceProperties)) {
-            assertTrue("checkout directory should exist", checkoutSpot.exists());
+            assertThat(checkoutSpot.exists()).isTrue();
         }
     }
 
@@ -67,7 +66,7 @@ public class GitServiceIT
 
         try (final VersioningService service = new GitService(versioningServiceProperties)) {
             final Optional<VersionedConfigUpdate> update = service.checkForUpdate();
-            assertFalse(update.isPresent());
+            assertThat(update.isPresent()).isFalse();
             // this is right after cloning so of course nothing has changed when we pull
         }
     }
@@ -84,8 +83,8 @@ public class GitServiceIT
             blurtRandomRepoChange(checkoutSpot, "someotherfile");
 
             final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
-            assertFalse(firstUpdate.isPresent());
-            assertFalse(secondUpdate.isPresent());  // no updates we care about here, sir
+            assertThat(firstUpdate.isPresent()).isFalse();
+            assertThat(secondUpdate.isPresent()).isFalse();  // no updates we care about here, sir
         }
     }
 
@@ -101,8 +100,8 @@ public class GitServiceIT
             blurtRandomRepoChange(checkoutSpot, "integrationtest/mappings.cfg.tsv");
 
             final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
-            assertFalse(firstUpdate.isPresent());
-            assertTrue(secondUpdate.isPresent());
+            assertThat(firstUpdate.isPresent()).isFalse();
+            assertThat(secondUpdate.isPresent()).isTrue();
         }
     }
 
@@ -116,15 +115,25 @@ public class GitServiceIT
             // make a change to a file dont know about. will trigger update
             blurtRandomRepoChange(checkoutSpot, "integrationtest/mappings.cfg.tsv");
             final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
-            assertTrue(firstUpdate.isPresent());
+            assertThat(firstUpdate.isPresent()).isTrue();
 
             // make a change to our original file
             blurtRandomRepoChange(checkoutSpot, "integrationtest/mappings.cfg.tsv");
 
             // it's hardwired, we have an update whether we like it or not
             final Optional<VersionedConfigUpdate> secondUpdate = service.checkForUpdate();
-            assertTrue(secondUpdate.isPresent());
+            assertThat(secondUpdate.isPresent()).isTrue();
         }
+    }
+
+    @Test
+    public void testAccessToRemoteRepoAndBranch() throws IOException {
+        workFolder.create();
+        final File checkoutSpot = workFolder.newFolder("otpl-deploy");
+        final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
+        final VersioningService service = VersioningService.forGitRepository(versioningServiceProperties);
+        assertThat(service.getBranch()).isEqualTo(versioningServiceProperties.getConfigBranch());
+        assertThat(service.getRemoteRepository()).isEqualTo(versioningServiceProperties.getRemoteConfigRepository());
     }
 
     private void blurtRandomRepoChange(File checkoutDir, String filename) throws IOException, GitAPIException {
@@ -134,7 +143,7 @@ public class GitServiceIT
 
         LOG.info("blurting random change into repo '{}'; altering '{}'", repoFile, touchy);
 
-        assertTrue(touchy.exists() || touchy.createNewFile());
+        assertThat(touchy.exists() || touchy.createNewFile()).isTrue();
 
         try(FileWriter fw = new FileWriter(touchy, true); PrintWriter pw = new PrintWriter(fw)) {
             LOG.info("appending some stuff");
