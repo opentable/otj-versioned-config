@@ -126,6 +126,16 @@ public class GitServiceIT
         }
     }
 
+    @Test
+    public void testAccessToRemoteRepoAndBranch() throws IOException {
+        workFolder.create();
+        final File checkoutSpot = workFolder.newFolder("otpl-deploy");
+        final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
+        final VersioningService service = VersioningService.forGitRepository(versioningServiceProperties);
+        assertThat(service.getBranch()).isEqualTo(versioningServiceProperties.getConfigBranch());
+        assertThat(service.getRemoteRepository()).isEqualTo(versioningServiceProperties.getRemoteConfigRepository());
+    }
+
     private void blurtRandomRepoChange(File checkoutDir, String filename) throws IOException, GitAPIException {
         final File repoFile = new File(checkoutDir, ".git");
         final Git git = new Git(new FileRepository(repoFile));
