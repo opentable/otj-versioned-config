@@ -17,17 +17,21 @@ import com.google.common.collect.ImmutableSet;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullResult;
+import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.merge.MergeStrategy;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.transport.CredentialsProvider;
+import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.slf4j.Logger;
@@ -70,6 +74,24 @@ final class GitOperations {
                     .call();
         } catch(GitAPIException ioe) {
             throw new VersioningServiceException("Could not clone repo", ioe);
+        }
+    }
+
+    boolean pullWithHardReset() throws VersioningServiceException
+    {
+        LOG.trace("pulling latest");
+        try {
+            LOG.trace("fetch origin");
+            final FetchResult fetchResult = git.fetch().setRemote("origin").call();
+
+            LOG.trace("reset hard");
+            final Ref ref = git.reset().setMode( ResetCommand.ResetType.HARD ).setRef( "origin/master" ).call();
+
+            final PullResult result = git.pull().setCredentialsProvider(credentials).call();
+
+            return result.isSuccessful();
+        } catch (GitAPIException e) {
+            throw new VersioningServiceException("could not pull", e);
         }
     }
 
