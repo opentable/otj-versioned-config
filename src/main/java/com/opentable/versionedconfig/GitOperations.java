@@ -26,7 +26,6 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.merge.MergeStrategy;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -77,30 +76,25 @@ final class GitOperations {
         }
     }
 
-    boolean pullWithHardReset() throws VersioningServiceException
-    {
-        LOG.trace("pulling latest");
-        try {
-            LOG.trace("fetch origin");
-            final FetchResult fetchResult = git.fetch().setRemote("origin").call();
-
-            LOG.trace("reset hard");
-            final Ref ref = git.reset().setMode( ResetCommand.ResetType.HARD ).setRef( "origin/master" ).call();
-
-            final PullResult result = git.pull().setCredentialsProvider(credentials).call();
-
-            return result.isSuccessful();
-        } catch (GitAPIException e) {
-            throw new VersioningServiceException("could not pull", e);
-        }
-    }
-
     boolean pull() throws VersioningServiceException
     {
-        LOG.trace("pulling latest");
+        LOG.info("fetch & reset to latest");
         try {
-            final PullResult result = git.pull().setCredentialsProvider(credentials).call();
-            return result.isSuccessful();
+            final FetchResult fetchResult = git
+                    .fetch()
+                    .setCredentialsProvider(credentials)
+                    .setRemote("origin")
+                    .call();
+            LOG.info("fetched from = {}", fetchResult.getURI().toString());
+
+            final Ref ref = git
+                    .reset()
+                    .setMode(ResetCommand.ResetType.HARD)
+                    .setRef("origin/master")
+                    .call();
+            LOG.info("reset hard to id = {}, name = {}", ref.getObjectId().name(), ref.getName());
+
+            return true;
         } catch (GitAPIException e) {
             throw new VersioningServiceException("could not pull", e);
         }
@@ -184,32 +178,26 @@ final class GitOperations {
         try {
             LOG.trace("trying to figure out difference between {} and {}", oldId.toString(), headId.toString());
             final Repository repo = git.getRepository();
-            final RevWalk walk = new RevWalk(repo);
+            try (final RevWalk walk = new RevWalk(repo)) {
 
-            final CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
-            final ObjectReader oldReader = repo.newObjectReader();
-            final RevTree oldTree = walk.parseCommit(oldId).getTree();
-            try {
-                oldTreeParser.reset(oldReader, oldTree.getId());
-            } finally {
-                oldReader.release();
+                final CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
+                try (final ObjectReader oldReader = repo.newObjectReader()) {
+                    final RevTree oldTree = walk.parseCommit(oldId).getTree();
+                    oldTreeParser.reset(oldReader, oldTree.getId());
+                }
+
+                final CanonicalTreeParser newTreeParser = new CanonicalTreeParser();
+                try (final ObjectReader newReader = repo.newObjectReader()) {
+                    final RevTree newTree = walk.parseCommit(headId).getTree();
+                    newTreeParser.reset(newReader, newTree.getId());
+                }
+
+                return git.diff()
+                        .setOldTree(oldTreeParser)
+                        .setNewTree(newTreeParser)
+                        .call();
             }
-
-            final CanonicalTreeParser newTreeParser = new CanonicalTreeParser();
-            final ObjectReader newReader = repo.newObjectReader();
-            final RevTree newTree = walk.parseCommit(headId).getTree();
-            try {
-                newTreeParser.reset(newReader, newTree.getId());
-            } finally {
-                newReader.release();
-            }
-
-            final List<DiffEntry> diffEntries = git.diff()
-                    .setOldTree(oldTreeParser)
-                    .setNewTree(newTreeParser)
-                    .call();
-            return diffEntries;
-        } catch (GitAPIException|IOException e) {
+        } catch (GitAPIException | IOException e) {
             throw new VersioningServiceException("Can't get diff", e);
         }
     }
