@@ -89,7 +89,7 @@ class VersioningServiceProperties {
 
     public static VersioningServiceProperties fromGitProperties(GitProperties config) {
         VersioningServiceProperties props = new VersioningServiceProperties();
-        props.setRemoteConfigRepository(config.getRemoteConfigRepository());
+        props.setRemoteConfigRepository(config.getRemoteRepository());
         props.setRepoUsername(config.getRepoUsername());
         props.setRepoPassword(config.getRepoPassword());
         props.setLocalConfigRepository(config.getLocalConfigRepository());

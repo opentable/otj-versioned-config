@@ -133,7 +133,7 @@ public class GitServiceIT
         final GitProperties gitProperties = getGitProperties(checkoutSpot);
         final VersioningService service = VersioningService.forGitRepository(gitProperties);
         assertThat(service.getBranch()).isEqualTo(gitProperties.getConfigBranch());
-        assertThat(service.getRemoteRepository()).isEqualTo(gitProperties.getRemoteConfigRepository());
+        assertThat(service.getRemoteRepository()).isEqualTo(gitProperties.getRemoteRepository());
     }
 
     private void blurtRandomRepoChange(File checkoutDir, String filename) throws IOException, GitAPIException {

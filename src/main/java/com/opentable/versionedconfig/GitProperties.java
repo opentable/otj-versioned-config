@@ -3,29 +3,31 @@ package com.opentable.versionedconfig;
 import java.io.File;
 import java.net.URI;
 
+import javax.annotation.Nullable;
+
 import com.google.common.base.Objects;
 
 public class GitProperties {
-    private final URI remoteConfigRepository;
+    private final URI remoteRepository;
     private final String repoUsername;
     private final String repoPassword;
     private final File localConfigRepository;
     private final String configBranch;
 
-    public GitProperties(URI remoteConfigRepository,
+    public GitProperties(URI remoteRepository,
                          String repoUsername,
                          String repoPassword,
-                         File localConfigRepository,
+                         @Nullable File localConfigRepository,
                          String configBranch) {
-        this.remoteConfigRepository = remoteConfigRepository;
+        this.remoteRepository = remoteRepository;
         this.repoUsername = repoUsername;
         this.repoPassword = repoPassword;
         this.localConfigRepository = localConfigRepository;
         this.configBranch = configBranch;
     }
 
-    public URI getRemoteConfigRepository() {
-        return remoteConfigRepository;
+    public URI getRemoteRepository() {
+        return remoteRepository;
     }
 
     public String getRepoUsername() {
@@ -54,7 +56,7 @@ public class GitProperties {
         }
 
         GitProperties that = (GitProperties) o;
-        return Objects.equal(remoteConfigRepository, that.remoteConfigRepository) &&
+        return Objects.equal(remoteRepository, that.remoteRepository) &&
                 Objects.equal(repoUsername, that.repoUsername) &&
                 Objects.equal(repoPassword, that.repoPassword) &&
                 Objects.equal(localConfigRepository, that.localConfigRepository) &&
@@ -63,13 +65,13 @@ public class GitProperties {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(remoteConfigRepository, repoUsername, repoPassword, localConfigRepository, configBranch);
+        return Objects.hashCode(remoteRepository, repoUsername, repoPassword, localConfigRepository, configBranch);
     }
 
     @Override
     public String toString() {
         return "GitProperties{" +
-                "remoteConfigRepository=" + remoteConfigRepository +
+                "remoteRepository=" + remoteRepository +
                 ", repoUsername='" + repoUsername + '\'' +
                 ", repoPassword=<redacted>" +
                 ", localConfigRepository=" + localConfigRepository +

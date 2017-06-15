@@ -127,7 +127,7 @@ class GitService implements VersioningService {
 
     @Override
     public URI getRemoteRepository() {
-        return serviceConfig.getRemoteConfigRepository();
+        return serviceConfig.getRemoteRepository();
     }
 
     @Override
