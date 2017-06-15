@@ -37,12 +37,12 @@ final class GitOperations {
     private final Git git;
     private final CredentialsProvider credentials;
 
-    GitOperations(final VersioningServiceProperties serviceConfig, Path checkoutDir) throws VersioningServiceException, IOException {
+    GitOperations(final GitProperties serviceConfig, Path checkoutDir) throws VersioningServiceException, IOException {
         this.credentials = new UsernamePasswordCredentialsProvider(serviceConfig.getRepoUsername(), serviceConfig.getRepoPassword());
         this.git = openRepo(serviceConfig, checkoutDir);
     }
 
-    private Git openRepo(final VersioningServiceProperties serviceConfig, Path checkoutDir)
+    private Git openRepo(final GitProperties serviceConfig, Path checkoutDir)
             throws VersioningServiceException, IOException {
         if (Files.exists(checkoutDir) && Files.isDirectory(checkoutDir)) {
             LOG.info("checkout directory {} already exists", checkoutDir);
@@ -67,13 +67,12 @@ final class GitOperations {
                     .setDirectory(checkoutDir.toFile())
                     .setURI(cloneSource)
                     .call();
-        } catch(GitAPIException ioe) {
+        } catch (GitAPIException ioe) {
             throw new VersioningServiceException("Could not clone repo", ioe);
         }
     }
 
-    boolean pull() throws VersioningServiceException
-    {
+    boolean pull() throws VersioningServiceException {
         LOG.trace("pulling latest");
         try {
             final PullResult result = git.pull().setCredentialsProvider(credentials).call();
@@ -96,8 +95,7 @@ final class GitOperations {
     /**
      * Converts source repo URIs to something git can deal with on the command line
      */
-    String cloningUriToGitArgument(URI remoteRepoURI) throws VersioningServiceException
-    {
+    String cloningUriToGitArgument(URI remoteRepoURI) throws VersioningServiceException {
         final String scheme = remoteRepoURI.getScheme();
         if ("file".equals(scheme)) {
             return absoluteLocalPath(remoteRepoURI);
@@ -106,8 +104,7 @@ final class GitOperations {
         }
     }
 
-    String absoluteLocalPath(URI remoteRepoURI) throws VersioningServiceException
-    {
+    String absoluteLocalPath(URI remoteRepoURI) throws VersioningServiceException {
         Preconditions.checkState("file".equals(remoteRepoURI.getScheme()), "Can only deal with file URLs");
         Preconditions.checkState(remoteRepoURI.getHost() == null, "Can only deal with local URLs");
         try {
@@ -131,7 +128,7 @@ final class GitOperations {
             } else {
                 throw new VersioningServiceException("specified branch has no HEAD");
             }
-        } catch (IOException|GitAPIException e) {
+        } catch (IOException | GitAPIException e) {
             throw new VersioningServiceException("specified branch has no commits", e);
         }
     }

@@ -5,8 +5,11 @@ import java.net.URI;
 
 import org.springframework.beans.factory.annotation.Value;
 
-class VersioningServiceProperties
-{
+/**
+ * @deprecated use {@link com.opentable.versionedconfig.GitProperties} instead.
+ */
+@Deprecated
+class VersioningServiceProperties {
     /**
      * @return Where the configuration should be cloned from
      */
@@ -82,5 +85,15 @@ class VersioningServiceProperties
 
     public String getConfigBranch() {
         return configBranch;
+    }
+
+    public static VersioningServiceProperties fromGitProperties(GitProperties config) {
+        VersioningServiceProperties props = new VersioningServiceProperties();
+        props.setRemoteConfigRepository(config.getRemoteConfigRepository());
+        props.setRepoUsername(config.getRepoUsername());
+        props.setRepoPassword(config.getRepoPassword());
+        props.setLocalConfigRepository(config.getLocalConfigRepository());
+        props.setConfigBranch(config.getConfigBranch());
+        return props;
     }
 }

@@ -27,21 +27,19 @@ import com.opentable.io.DeleteRecursively;
  * Responsible for noticing when service configuration has been updated
  */
 @NotThreadSafe
-class GitService implements VersioningService
-{
+class GitService implements VersioningService {
 
     private static final Logger LOG = LoggerFactory.getLogger(GitService.class);
 
     private final Path checkoutDirectory;
-    private final VersioningServiceProperties serviceConfig;
+    private final GitProperties serviceConfig;
 
     private final GitOperations gitOperations;
 
     private AtomicReference<ObjectId> latestKnownObjectId;
 
     @Inject
-    GitService(VersioningServiceProperties serviceConfig) throws VersioningServiceException
-    {
+    GitService(GitProperties serviceConfig) throws VersioningServiceException {
         this.serviceConfig = serviceConfig;
         this.checkoutDirectory = getCheckoutPath();
         LOG.info("initializing GitService with checkout directory of " + checkoutDirectory);
@@ -90,8 +88,7 @@ class GitService implements VersioningService
      * @return set of affected files, if any, or empty set.
      */
     @Override
-    public Optional<VersionedConfigUpdate> checkForUpdate() throws VersioningServiceException
-    {
+    public Optional<VersionedConfigUpdate> checkForUpdate() throws VersioningServiceException {
         if (!gitOperations.pull()) {
             LOG.trace("pull did nothing");
             return empty();
