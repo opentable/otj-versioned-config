@@ -47,7 +47,7 @@ class GitService implements VersioningService {
         try {
             this.gitOperations = new GitOperations(serviceConfig, checkoutDirectory);
 
-            gitOperations.checkoutBranch(serviceConfig.getConfigBranch());
+            gitOperations.checkoutBranch(serviceConfig.getBranch());
             this.latestKnownObjectId = new AtomicReference<>(gitOperations.getCurrentHead());
             LOG.info("latest SHA = {}", latestKnownObjectId.get());
 
@@ -57,7 +57,7 @@ class GitService implements VersioningService {
     }
 
     private Path getCheckoutPath() {
-        final File configuredFile = serviceConfig.getLocalConfigRepository();
+        final File configuredFile = serviceConfig.getLocalRepository();
         if (configuredFile != null) {
             return configuredFile.toPath();
         }
@@ -132,13 +132,13 @@ class GitService implements VersioningService {
 
     @Override
     public String getBranch() {
-        return serviceConfig.getConfigBranch();
+        return serviceConfig.getBranch();
     }
 
     @Override
     @PreDestroy
     public void close() throws IOException {
-        if (serviceConfig.getLocalConfigRepository() != null) {
+        if (serviceConfig.getLocalRepository() != null) {
             return;
         }
 

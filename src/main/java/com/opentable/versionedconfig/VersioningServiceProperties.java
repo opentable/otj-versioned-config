@@ -90,10 +90,10 @@ class VersioningServiceProperties {
     public static VersioningServiceProperties fromGitProperties(GitProperties config) {
         VersioningServiceProperties props = new VersioningServiceProperties();
         props.setRemoteConfigRepository(config.getRemoteRepository());
-        props.setRepoUsername(config.getRepoUsername());
-        props.setRepoPassword(config.getRepoPassword());
-        props.setLocalConfigRepository(config.getLocalConfigRepository());
-        props.setConfigBranch(config.getConfigBranch());
+        props.setRepoUsername(config.getUsername());
+        props.setRepoPassword(config.getPassword());
+        props.setLocalConfigRepository(config.getLocalRepository());
+        props.setConfigBranch(config.getBranch());
         return props;
     }
 }

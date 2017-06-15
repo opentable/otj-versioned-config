@@ -29,16 +29,14 @@ import org.slf4j.LoggerFactory;
  * if you don't have it cloned in the directory it's expecting ($PWD/../conf).
  */
 @Ignore
-public class GitServiceIT
-{
+public class GitServiceIT {
 
     private static final Logger LOG = LoggerFactory.getLogger(GitServiceIT.class);
     @Rule
     public TemporaryFolder workFolder = new TemporaryFolder();
 
     @Test
-    public void initializeWillCloneRepo() throws IOException
-    {
+    public void initializeWillCloneRepo() throws IOException {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("init");
         final GitProperties gitProperties = getGitProperties(checkoutSpot);
@@ -58,8 +56,7 @@ public class GitServiceIT
     }
 
     @Test
-    public void canGetCurrentConfig() throws IOException, VersioningServiceException
-    {
+    public void canGetCurrentConfig() throws IOException, VersioningServiceException {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("get");
         final GitProperties gitProperties = getGitProperties(checkoutSpot);
@@ -132,7 +129,7 @@ public class GitServiceIT
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final GitProperties gitProperties = getGitProperties(checkoutSpot);
         final VersioningService service = VersioningService.forGitRepository(gitProperties);
-        assertThat(service.getBranch()).isEqualTo(gitProperties.getConfigBranch());
+        assertThat(service.getBranch()).isEqualTo(gitProperties.getBranch());
         assertThat(service.getRemoteRepository()).isEqualTo(gitProperties.getRemoteRepository());
     }
 
@@ -145,7 +142,7 @@ public class GitServiceIT
 
         assertThat(touchy.exists() || touchy.createNewFile()).isTrue();
 
-        try(FileWriter fw = new FileWriter(touchy, true); PrintWriter pw = new PrintWriter(fw)) {
+        try (FileWriter fw = new FileWriter(touchy, true); PrintWriter pw = new PrintWriter(fw)) {
             LOG.info("appending some stuff");
             pw.append("Another line");
             pw.flush();

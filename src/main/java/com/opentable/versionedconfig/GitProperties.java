@@ -9,41 +9,41 @@ import com.google.common.base.Objects;
 
 public class GitProperties {
     private final URI remoteRepository;
-    private final String repoUsername;
-    private final String repoPassword;
-    private final File localConfigRepository;
-    private final String configBranch;
+    private final String username;
+    private final String password;
+    private final File localRepository;
+    private final String branch;
 
     public GitProperties(URI remoteRepository,
-                         String repoUsername,
-                         String repoPassword,
-                         @Nullable File localConfigRepository,
-                         String configBranch) {
+                         String username,
+                         String password,
+                         @Nullable File localRepository,
+                         String branch) {
         this.remoteRepository = remoteRepository;
-        this.repoUsername = repoUsername;
-        this.repoPassword = repoPassword;
-        this.localConfigRepository = localConfigRepository;
-        this.configBranch = configBranch;
+        this.username = username;
+        this.password = password;
+        this.localRepository = localRepository;
+        this.branch = branch;
     }
 
     public URI getRemoteRepository() {
         return remoteRepository;
     }
 
-    public String getRepoUsername() {
-        return repoUsername;
+    public String getUsername() {
+        return username;
     }
 
-    public String getRepoPassword() {
-        return repoPassword;
+    public String getPassword() {
+        return password;
     }
 
-    public File getLocalConfigRepository() {
-        return localConfigRepository;
+    public File getLocalRepository() {
+        return localRepository;
     }
 
-    public String getConfigBranch() {
-        return configBranch;
+    public String getBranch() {
+        return branch;
     }
 
     @Override
@@ -57,25 +57,25 @@ public class GitProperties {
 
         GitProperties that = (GitProperties) o;
         return Objects.equal(remoteRepository, that.remoteRepository) &&
-                Objects.equal(repoUsername, that.repoUsername) &&
-                Objects.equal(repoPassword, that.repoPassword) &&
-                Objects.equal(localConfigRepository, that.localConfigRepository) &&
-                Objects.equal(configBranch, that.configBranch);
+                Objects.equal(username, that.username) &&
+                Objects.equal(password, that.password) &&
+                Objects.equal(localRepository, that.localRepository) &&
+                Objects.equal(branch, that.branch);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(remoteRepository, repoUsername, repoPassword, localConfigRepository, configBranch);
+        return Objects.hashCode(remoteRepository, username, password, localRepository, branch);
     }
 
     @Override
     public String toString() {
         return "GitProperties{" +
                 "remoteRepository=" + remoteRepository +
-                ", repoUsername='" + repoUsername + '\'' +
-                ", repoPassword=<redacted>" +
-                ", localConfigRepository=" + localConfigRepository +
-                ", configBranch='" + configBranch + '\'' +
+                ", username='" + username + '\'' +
+                ", password=<redacted>" +
+                ", localRepository=" + localRepository +
+                ", branch='" + branch + '\'' +
                 '}';
     }
 }
