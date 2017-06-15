@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import com.opentable.io.DeleteRecursively;
 
 /**
- * Responsible for noticing when service configuration has been updated
+ * Responsible for noticing when service configuration has been updated.
  */
 @NotThreadSafe
 class GitService implements VersioningService {
@@ -85,7 +85,7 @@ class GitService implements VersioningService {
      * <p>
      * The first time we are called we should just return an update with all files.
      *
-     * @return set of affected files, if any, or empty set.
+     * @return set of affected files, if any, or empty set
      */
     @Override
     public Optional<VersionedConfigUpdate> checkForUpdate() throws VersioningServiceException {

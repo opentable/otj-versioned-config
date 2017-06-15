@@ -27,7 +27,7 @@ public class VersionedConfig {
     }
 
     /**
-     * @deprecated use {@link VersionedConfig#defaultVersioningServiceProperties} instead.
+     * @deprecated use {@link VersionedConfig#defaultVersioningServiceProperties} instead
      */
     @Bean
     @Deprecated

@@ -9,11 +9,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Carries around info about files touched by git updates
+ * Carries around info about files touched by git updates.
  */
 public final class VersionedConfigUpdate {
     /**
-     * The base path of the checked out repository
+     * The base path of the checked out repository.
      */
     private final Path basePath;
 

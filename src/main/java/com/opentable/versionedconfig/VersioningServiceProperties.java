@@ -6,7 +6,9 @@ import java.net.URI;
 import org.springframework.beans.factory.annotation.Value;
 
 /**
- * @deprecated use {@link com.opentable.versionedconfig.GitProperties} instead.
+ * Legacy Git metadata class.
+ *
+ * @deprecated use {@link com.opentable.versionedconfig.GitProperties} instead
  */
 @Deprecated
 class VersioningServiceProperties {

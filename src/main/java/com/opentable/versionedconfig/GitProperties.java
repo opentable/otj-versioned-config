@@ -7,6 +7,9 @@ import javax.annotation.Nullable;
 
 import com.google.common.base.Objects;
 
+/**
+ * Git metadata properties.
+ */
 public class GitProperties {
     private final URI remoteRepository;
     private final String username;

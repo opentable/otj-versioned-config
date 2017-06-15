@@ -93,7 +93,7 @@ final class GitOperations {
     }
 
     /**
-     * Converts source repo URIs to something git can deal with on the command line
+     * Converts source repo URIs to something git can deal with on the command line.
      */
     String cloningUriToGitArgument(URI remoteRepoURI) throws VersioningServiceException {
         final String scheme = remoteRepoURI.getScheme();
