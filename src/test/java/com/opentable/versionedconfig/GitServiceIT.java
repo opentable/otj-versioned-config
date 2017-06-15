@@ -41,8 +41,8 @@ public class GitServiceIT
     {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("init");
-        final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
-        try (final VersioningService service = new GitService(versioningServiceProperties)) {
+        final GitProperties gitProperties = getGitProperties(checkoutSpot);
+        try (final VersioningService service = new GitService(gitProperties)) {
             assertThat(checkoutSpot.exists()).isTrue();
         }
     }
@@ -51,8 +51,8 @@ public class GitServiceIT
     public void canGetUpdates() throws IOException, VersioningServiceException {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("update");
-        final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
-        try (final VersioningService service = new GitService(versioningServiceProperties)) {
+        final GitProperties gitProperties = getGitProperties(checkoutSpot);
+        try (final VersioningService service = new GitService(gitProperties)) {
             service.checkForUpdate();
         }
     }
@@ -62,9 +62,9 @@ public class GitServiceIT
     {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("get");
-        final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
+        final GitProperties gitProperties = getGitProperties(checkoutSpot);
 
-        try (final VersioningService service = new GitService(versioningServiceProperties)) {
+        try (final VersioningService service = new GitService(gitProperties)) {
             final Optional<VersionedConfigUpdate> update = service.checkForUpdate();
             assertThat(update.isPresent()).isFalse();
             // this is right after cloning so of course nothing has changed when we pull
@@ -75,9 +75,9 @@ public class GitServiceIT
     public void ignoredPathsDontDoAnything() throws IOException, VersioningServiceException, GitAPIException {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
-        final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
+        final GitProperties gitProperties = getGitProperties(checkoutSpot);
 
-        try (final VersioningService service = new GitService(versioningServiceProperties)) {
+        try (final VersioningService service = new GitService(gitProperties)) {
             final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
 
             blurtRandomRepoChange(checkoutSpot, "someotherfile");
@@ -92,9 +92,9 @@ public class GitServiceIT
     public void filesWeCareAboutDontGetIgnored() throws IOException, VersioningServiceException, GitAPIException {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
-        final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
+        final GitProperties gitProperties = getGitProperties(checkoutSpot);
 
-        try (final VersioningService service = new GitService(versioningServiceProperties)) {
+        try (final VersioningService service = new GitService(gitProperties)) {
             final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
 
             blurtRandomRepoChange(checkoutSpot, "integrationtest/mappings.cfg.tsv");
@@ -109,9 +109,9 @@ public class GitServiceIT
     public void setMonitoredFiles_cannotForgetHardWired() throws IOException, VersioningServiceException, GitAPIException {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
-        final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
+        final GitProperties gitProperties = getGitProperties(checkoutSpot);
 
-        try (final VersioningService service = new GitService(versioningServiceProperties)) {
+        try (final VersioningService service = new GitService(gitProperties)) {
             // make a change to a file dont know about. will trigger update
             blurtRandomRepoChange(checkoutSpot, "integrationtest/mappings.cfg.tsv");
             final Optional<VersionedConfigUpdate> firstUpdate = service.checkForUpdate();
@@ -130,10 +130,10 @@ public class GitServiceIT
     public void testAccessToRemoteRepoAndBranch() throws IOException {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
-        final VersioningServiceProperties versioningServiceProperties = getVersioningServiceProperties(checkoutSpot);
-        final VersioningService service = VersioningService.forGitRepository(versioningServiceProperties);
-        assertThat(service.getBranch()).isEqualTo(versioningServiceProperties.getConfigBranch());
-        assertThat(service.getRemoteRepository()).isEqualTo(versioningServiceProperties.getRemoteConfigRepository());
+        final GitProperties gitProperties = getGitProperties(checkoutSpot);
+        final VersioningService service = VersioningService.forGitRepository(gitProperties);
+        assertThat(service.getBranch()).isEqualTo(gitProperties.getConfigBranch());
+        assertThat(service.getRemoteRepository()).isEqualTo(gitProperties.getRemoteConfigRepository());
     }
 
     private void blurtRandomRepoChange(File checkoutDir, String filename) throws IOException, GitAPIException {
@@ -156,7 +156,7 @@ public class GitServiceIT
         LOG.info("commit = {}", commit);
     }
 
-    private VersioningServiceProperties getVersioningServiceProperties(File checkoutSpot) {
+    private GitProperties getGitProperties(File checkoutSpot) {
         final URI source;
         final String githubAuthKey = System.getProperty("testing.github.auth-key");
         if (githubAuthKey == null) {
@@ -164,10 +164,7 @@ public class GitServiceIT
             return null;
         }
         source = URI.create("https://github.com/opentable/service-ot-frontdoor-config");
-        return new VersioningServiceProperties().setRemoteConfigRepository(source)
-            .setConfigBranch("master")
-            .setRepoUsername(githubAuthKey)
-            .setRepoPassword("x-oauth-basic")
-            .setLocalConfigRepository(checkoutSpot);
+        return new GitProperties(
+                source, githubAuthKey, "x-oauth-basic", checkoutSpot, "master");
     }
 }

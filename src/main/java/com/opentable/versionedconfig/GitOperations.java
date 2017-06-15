@@ -165,11 +165,10 @@ final class GitOperations {
                 newTreeParser.reset(newReader, newTree.getId());
             }
 
-            final List<DiffEntry> diffEntries = git.diff()
+            return git.diff()
                     .setOldTree(oldTreeParser)
                     .setNewTree(newTreeParser)
                     .call();
-            return diffEntries;
         } catch (GitAPIException | IOException e) {
             throw new VersioningServiceException("Can't get diff", e);
         }
