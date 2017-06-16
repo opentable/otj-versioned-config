@@ -18,7 +18,7 @@ public interface VersioningService extends Closeable {
 
     String getBranch();
 
-    static VersioningService forGitRepository(VersioningServiceProperties config) {
+    static VersioningService forGitRepository(GitProperties config) {
         return new GitService(config);
     }
 }

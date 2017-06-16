@@ -24,24 +24,22 @@ import org.slf4j.LoggerFactory;
 import com.opentable.io.DeleteRecursively;
 
 /**
- * Responsible for noticing when service configuration has been updated
+ * Responsible for noticing when service configuration has been updated.
  */
 @NotThreadSafe
-class GitService implements VersioningService
-{
+class GitService implements VersioningService {
 
     private static final Logger LOG = LoggerFactory.getLogger(GitService.class);
 
     private final Path checkoutDirectory;
-    private final VersioningServiceProperties serviceConfig;
+    private final GitProperties serviceConfig;
 
     private final GitOperations gitOperations;
 
     private AtomicReference<ObjectId> latestKnownObjectId;
 
     @Inject
-    GitService(VersioningServiceProperties serviceConfig) throws VersioningServiceException
-    {
+    GitService(GitProperties serviceConfig) throws VersioningServiceException {
         this.serviceConfig = serviceConfig;
         this.checkoutDirectory = getCheckoutPath();
         LOG.info("initializing GitService with checkout directory of " + checkoutDirectory);
@@ -49,7 +47,7 @@ class GitService implements VersioningService
         try {
             this.gitOperations = new GitOperations(serviceConfig, checkoutDirectory);
 
-            gitOperations.checkoutBranch(serviceConfig.getConfigBranch());
+            gitOperations.checkoutBranch(serviceConfig.getBranch());
             this.latestKnownObjectId = new AtomicReference<>(gitOperations.getCurrentHead());
             LOG.info("latest SHA = {}", latestKnownObjectId.get());
 
@@ -59,7 +57,7 @@ class GitService implements VersioningService
     }
 
     private Path getCheckoutPath() {
-        final File configuredFile = serviceConfig.getLocalConfigRepository();
+        final File configuredFile = serviceConfig.getLocalRepository();
         if (configuredFile != null) {
             return configuredFile.toPath();
         }
@@ -87,11 +85,10 @@ class GitService implements VersioningService
      * <p>
      * The first time we are called we should just return an update with all files.
      *
-     * @return set of affected files, if any, or empty set.
+     * @return set of affected files, if any, or empty set
      */
     @Override
-    public Optional<VersionedConfigUpdate> checkForUpdate() throws VersioningServiceException
-    {
+    public Optional<VersionedConfigUpdate> checkForUpdate() throws VersioningServiceException {
         if (!gitOperations.pull()) {
             LOG.trace("pull did nothing");
             return empty();
@@ -130,18 +127,18 @@ class GitService implements VersioningService
 
     @Override
     public URI getRemoteRepository() {
-        return serviceConfig.getRemoteConfigRepository();
+        return serviceConfig.getRemoteRepository();
     }
 
     @Override
     public String getBranch() {
-        return serviceConfig.getConfigBranch();
+        return serviceConfig.getBranch();
     }
 
     @Override
     @PreDestroy
     public void close() throws IOException {
-        if (serviceConfig.getLocalConfigRepository() != null) {
+        if (serviceConfig.getLocalRepository() != null) {
             return;
         }
 
