@@ -1,6 +1,7 @@
 package com.opentable.versionedconfig;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.io.File;
 import java.io.IOException;
@@ -105,6 +106,19 @@ public class GitServiceTest {
         final VersioningService service = VersioningService.forGitRepository(gitProperties);
         assertThat(service.getBranch()).isEqualTo(gitProperties.getBranch());
         assertThat(service.getRemoteRepository()).isEqualTo(gitProperties.getRemoteRepository());
+    }
+
+    @Test
+    public void testCredentialsMustBothBeEmptyOrNull() {
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> VersioningService.forGitRepository(
+                        new GitProperties(null, "username", null, null, "master")))
+                .withMessageContaining("must provide username and password");
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> VersioningService.forGitRepository(
+                        new GitProperties(null, null, "password", null, "master")))
+                .withMessageContaining("must provide username and password");
     }
 
     private GitProperties getGitProperties(File checkoutSpot) {

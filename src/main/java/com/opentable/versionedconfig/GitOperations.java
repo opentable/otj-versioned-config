@@ -1,5 +1,7 @@
 package com.opentable.versionedconfig;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -46,10 +48,13 @@ final class GitOperations {
     }
 
     private Optional<CredentialsProvider> makeCredentials(String username, String password) {
-        if (username == null && password == null) {
+        boolean missingUsername = isNullOrEmpty(username);
+        boolean missingPassword = isNullOrEmpty(password);
+
+        if (missingUsername && missingPassword) {
             return Optional.empty();
-        } else if (username == null || password == null) {
-            throw new IllegalArgumentException("must provide username and password, or both must be null");
+        } else if (missingUsername || missingPassword) {
+            throw new IllegalArgumentException("must provide username and password, or both must be empty/null");
         }
         return Optional.of(new UsernamePasswordCredentialsProvider(username, password));
     }

@@ -18,8 +18,8 @@ public class GitProperties {
     private final String branch;
 
     public GitProperties(URI remoteRepository,
-                         String username,
-                         String password,
+                         @Nullable String username,
+                         @Nullable String password,
                          @Nullable File localRepository,
                          String branch) {
         this.remoteRepository = remoteRepository;
