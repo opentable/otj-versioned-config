@@ -68,7 +68,7 @@ public class GitRule extends ExternalResource {
 
     @Override
     protected void before() {
-        actions.forEach(a -> a.apply(localPath, gitRepo));
+        actions.forEach(this::runImmediate);
     }
 
     @Override
