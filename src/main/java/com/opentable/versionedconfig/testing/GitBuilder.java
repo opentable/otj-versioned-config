@@ -12,7 +12,7 @@ import java.util.List;
 import com.google.common.collect.ImmutableList;
 
 public class GitBuilder {
-    private static final String DEFAULT_PREIFX = "test";
+    private static final String DEFAULT_PREFIX = "test";
     private final List<GitAction> actions = new ArrayList<>();
     private Path localPath;
 
@@ -53,7 +53,7 @@ public class GitBuilder {
     public GitRule rule() {
         try {
             if (localPath == null) {
-                localPath = Files.createTempDirectory(DEFAULT_PREIFX);
+                localPath = Files.createTempDirectory(DEFAULT_PREFIX);
             }
             return new GitRule(localPath, ImmutableList.copyOf(actions));
         } catch (IOException e) {
