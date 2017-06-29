@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
-class GitCommit implements GitAction {
+public class GitCommit implements GitAction {
     private final String message;
 
     public GitCommit(String message) {
