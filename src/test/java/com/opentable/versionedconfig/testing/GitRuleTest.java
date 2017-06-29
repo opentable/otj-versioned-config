@@ -1,6 +1,7 @@
 package com.opentable.versionedconfig.testing;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.Rule;
@@ -49,6 +50,22 @@ public class GitRuleTest {
     @Test
     public void testCommitMessage() throws GitAPIException {
         assertThat(git.getGitRepo().log().call().iterator().next().getFullMessage()).isEqualTo("Initial commit");
+    }
+
+    @Test
+    public void testSubdirectory() throws GitAPIException {
+        git.editFile("nested/config.txt", "I am nested!").commit("Add subdir");
+        assertThat(git.getGitRepo().status().call().isClean()).isTrue();
+        assertThat(git.getLocalPath().resolve("nested")).isDirectory();
+        assertThat(git.getLocalPath().resolve("nested/config.txt")).isRegularFile();
+        assertThat(git.getLocalPath().resolve("nested/config.txt")).hasContent("I am nested!");
+    }
+
+    @Test
+    public void testFailOnAbsolute() {
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> git.editFile("/nested/config.txt", "Fail"))
+                .withMessageContaining("path must not be absolute");
     }
 
     @Test

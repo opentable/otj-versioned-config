@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import org.eclipse.jgit.api.AddCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.util.FileUtils;
 
 public class GitEditFile implements GitAction {
     private final Path path;
@@ -22,12 +23,21 @@ public class GitEditFile implements GitAction {
         this.path = path;
         this.contents = contents;
         this.append = append;
+
+        if (this.path.isAbsolute()) {
+            throw new IllegalArgumentException("path must not be absolute: " + path);
+        }
     }
 
     @Override
     public void apply(Path root, Git repo) {
         Path target = root.resolve(path);
         try {
+            Path basedir = target.getParent();
+            if (!root.equals(basedir)) {
+                FileUtils.mkdirs(basedir.toFile());
+            }
+
             if (append) {
                 Files.write(target, contents.getBytes(Charset.defaultCharset()), CREATE, APPEND);
             } else {

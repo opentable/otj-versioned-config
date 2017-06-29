@@ -48,4 +48,32 @@ public class VersioningServiceIntegrationTest {
 
         assertThat(repo.getCurrentState().getBasePath().resolve("foo.txt")).hasContent("Derp derp derp");
     }
+
+    @Test
+    public void testNewFiles() {
+        GitProperties props = new GitProperties(remote.getLocalPath().toUri(), null, null, null, "master");
+        VersioningService repo = VersioningService.forGitRepository(props);
+
+        assertThat(repo.checkForUpdate()).isNotPresent();
+        remote.editFile("bar.txt", "Derp derp derp").commit("Additional commit");
+        assertThat(repo.checkForUpdate()).isPresent();
+
+        Path newFile = repo.getCurrentState().getBasePath().resolve("bar.txt");
+        assertThat(newFile).isRegularFile();
+        assertThat(newFile).hasContent("Derp derp derp");
+    }
+
+    @Test
+    public void testSubdirectories() {
+        GitProperties props = new GitProperties(remote.getLocalPath().toUri(), null, null, null, "master");
+        VersioningService repo = VersioningService.forGitRepository(props);
+
+        assertThat(repo.checkForUpdate()).isNotPresent();
+        remote.editFile("nested/bar.txt", "Derp derp derp").commit("Additional commit");
+        assertThat(repo.checkForUpdate()).isPresent();
+
+        Path newFile = repo.getCurrentState().getBasePath().resolve("nested/bar.txt");
+        assertThat(newFile).isRegularFile();
+        assertThat(newFile).hasContent("Derp derp derp");
+    }
 }
