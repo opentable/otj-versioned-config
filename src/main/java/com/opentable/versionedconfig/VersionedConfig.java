@@ -20,19 +20,8 @@ public class VersionedConfig {
         return new GitProperties(remoteRepo, username, auth, localPath, branch);
     }
 
-
     @Bean
     public VersioningService defaultVersioningService(@Named("defaultVersioningServiceProperties") GitProperties config) {
         return VersioningService.forGitRepository(config);
-    }
-
-    /**
-     * @deprecated use {@link VersionedConfig#defaultVersioningServiceProperties} instead
-     */
-    @Bean
-    @Deprecated
-    public VersioningServiceProperties versioningServiceProperties(
-            @Named("defaultVersioningServiceProperties") GitProperties config) {
-        return VersioningServiceProperties.fromGitProperties(config);
     }
 }

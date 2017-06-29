@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -14,7 +15,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 
+import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
@@ -35,11 +38,20 @@ import org.slf4j.LoggerFactory;
 final class GitOperations {
     private static final Logger LOG = LoggerFactory.getLogger(GitOperations.class);
     private final Git git;
-    private final CredentialsProvider credentials;
+    private final Optional<CredentialsProvider> credentials;
 
     GitOperations(final GitProperties serviceConfig, Path checkoutDir) throws VersioningServiceException, IOException {
-        this.credentials = new UsernamePasswordCredentialsProvider(serviceConfig.getUsername(), serviceConfig.getPassword());
+        this.credentials = makeCredentials(serviceConfig.getUsername(), serviceConfig.getPassword());
         this.git = openRepo(serviceConfig, checkoutDir);
+    }
+
+    private Optional<CredentialsProvider> makeCredentials(String username, String password) {
+        if (username == null && password == null) {
+            return Optional.empty();
+        } else if (username == null || password == null) {
+            throw new IllegalArgumentException("must provide username and password, or both must be null");
+        }
+        return Optional.of(new UsernamePasswordCredentialsProvider(username, password));
     }
 
     private Git openRepo(final GitProperties serviceConfig, Path checkoutDir)
@@ -60,13 +72,13 @@ final class GitOperations {
         LOG.info("cloning {} (branch {}) to {}", cloneSource, cloneBranch, checkoutDir);
 
         try {
-            return Git.cloneRepository()
+            CloneCommand clone = Git.cloneRepository()
                     .setBare(false)
-                    .setCredentialsProvider(credentials)
                     .setBranch(cloneBranch)
                     .setDirectory(checkoutDir.toFile())
-                    .setURI(cloneSource)
-                    .call();
+                    .setURI(cloneSource);
+            credentials.ifPresent(clone::setCredentialsProvider);
+            return clone.call();
         } catch (GitAPIException ioe) {
             throw new VersioningServiceException("Could not clone repo", ioe);
         }
@@ -75,7 +87,9 @@ final class GitOperations {
     boolean pull() throws VersioningServiceException {
         LOG.trace("pulling latest");
         try {
-            final PullResult result = git.pull().setCredentialsProvider(credentials).call();
+            final PullCommand pull = git.pull();
+            credentials.ifPresent(pull::setCredentialsProvider);
+            PullResult result = pull.call();
             return result.isSuccessful();
         } catch (GitAPIException e) {
             throw new VersioningServiceException("could not pull", e);
