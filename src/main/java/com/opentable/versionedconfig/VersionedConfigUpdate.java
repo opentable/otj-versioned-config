@@ -8,6 +8,8 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import org.eclipse.jgit.lib.ObjectId;
+
 /**
  * Carries around info about files touched by git updates.
  */
@@ -25,9 +27,10 @@ public final class VersionedConfigUpdate {
     /**
      * Description of the VCS revisions that this change describes (e.g. SHA for git).
      */
-    private final String oldRevision, newRevision;
+    private final ObjectId oldRevision;
+    private final ObjectId newRevision;
 
-    public VersionedConfigUpdate(Path basePath, Stream<Path> changedFiles, String oldRevision, String newRevision) {
+    public VersionedConfigUpdate(Path basePath, Stream<Path> changedFiles, ObjectId oldRevision, ObjectId newRevision) {
         this.basePath = basePath;
         this.changedFiles = changedFiles;
         this.oldRevision = oldRevision;
@@ -59,15 +62,29 @@ public final class VersionedConfigUpdate {
      * @return the start revision for this diff
      */
     @Nullable
-    public String getOldRevision() {
+    public ObjectId getOldRevisionMetadata() {
         return oldRevision;
+    }
+
+    /**
+     * @return the start revision name for this diff
+     */
+    public String getOldRevision() {
+        return oldRevision == null ? "<unknown>" : oldRevision.getName();
     }
 
     /**
      * @return the end revision for this diff
      */
     @Nonnull
-    public String getNewRevision() {
+    public ObjectId getNewRevisionMetadata() {
         return newRevision;
+    }
+
+    /**
+     * @return the end revision name for this diff
+     */
+    public String getNewRevision() {
+        return newRevision == null ? "<unknown>" : newRevision.getName();
     }
 }
