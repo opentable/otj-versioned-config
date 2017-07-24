@@ -75,7 +75,7 @@ class GitService implements VersioningService {
     @Override
     public VersionedConfigUpdate getCurrentState() {
         return new VersionedConfigUpdate(
-                checkoutDirectory, Stream.empty(), null, latestKnownObjectId.toString());
+                checkoutDirectory, Stream.empty(), null, latestKnownObjectId.get());
     }
 
     /**
@@ -112,7 +112,7 @@ class GitService implements VersioningService {
         LOG.info("Update {} is relevant to my interests", pulled);
         latestKnownObjectId.set(pulled);
         return Optional.of(new VersionedConfigUpdate(
-                checkoutDirectory, affectedPaths, current.toString(), pulled.toString()));
+                checkoutDirectory, affectedPaths, current, pulled));
     }
 
     @Override

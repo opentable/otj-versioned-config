@@ -9,6 +9,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.ObjectId;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -106,6 +108,27 @@ public class GitServiceTest {
         final VersioningService service = VersioningService.forGitRepository(gitProperties);
         assertThat(service.getBranch()).isEqualTo(gitProperties.getBranch());
         assertThat(service.getRemoteRepository()).isEqualTo(gitProperties.getRemoteRepository());
+    }
+
+    @Test
+    public void testRevisionMetadata() throws IOException {
+        final GitProperties gitProperties = getGitProperties(null);
+        final VersioningService service = new GitService(gitProperties);
+
+        ObjectId currentCommit = remote.getGitRepo().getRepository().resolve(Constants.HEAD);
+        assertThat(service.getCurrentState().getOldRevision()).isEqualTo("<unknown>");
+        assertThat(service.getCurrentState().getNewRevision()).isEqualTo(currentCommit.getName());
+
+        remote.editFile("foo.txt", "Update the contents!").commit("Fix foo");
+        ObjectId nextCommit = remote.getGitRepo().getRepository().resolve(Constants.HEAD);
+        Optional<VersionedConfigUpdate> newState = service.checkForUpdate();
+        assertThat(newState).isPresent();
+
+        assertThat(newState.get().getOldRevision()).isEqualTo(currentCommit.getName());
+        assertThat(newState.get().getNewRevision()).isEqualTo(nextCommit.getName());
+
+        assertThat(newState.get().getOldRevisionMetadata()).isEqualTo(currentCommit);
+        assertThat(newState.get().getNewRevisionMetadata()).isEqualTo(nextCommit);
     }
 
     @Test
