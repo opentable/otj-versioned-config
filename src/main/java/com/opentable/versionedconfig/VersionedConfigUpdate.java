@@ -2,11 +2,11 @@ package com.opentable.versionedconfig;
 
 import java.nio.file.Path;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import com.google.common.collect.ImmutableSet;
 
 import org.eclipse.jgit.lib.ObjectId;
 
@@ -22,7 +22,7 @@ public final class VersionedConfigUpdate {
     /**
      * Subset of allKnownFiles affected by this update.
      */
-    private final Stream<Path> changedFiles;
+    private final Set<Path> changedFiles;
 
     /**
      * Description of the VCS revisions that this change describes (e.g. SHA for git).
@@ -30,9 +30,9 @@ public final class VersionedConfigUpdate {
     private final ObjectId oldRevision;
     private final ObjectId newRevision;
 
-    public VersionedConfigUpdate(Path basePath, Stream<Path> changedFiles, ObjectId oldRevision, ObjectId newRevision) {
+    public VersionedConfigUpdate(Path basePath, Iterable<Path> changedFiles, ObjectId oldRevision, ObjectId newRevision) {
         this.basePath = basePath;
-        this.changedFiles = changedFiles;
+        this.changedFiles = ImmutableSet.copyOf(changedFiles);
         this.oldRevision = oldRevision;
         this.newRevision = newRevision;
     }
@@ -45,17 +45,10 @@ public final class VersionedConfigUpdate {
     }
 
     /**
-     * @return a stream of the files changed in this diff
-     */
-    public Stream<Path> getChangedFiles() {
-        return changedFiles;
-    }
-
-    /**
      * @return a set of the files changed in this diff
      */
-    public Set<Path> getChangedFilesSet() {
-        return changedFiles.collect(Collectors.toSet());
+    public Set<Path> getChangedFiles() {
+        return changedFiles;
     }
 
     /**

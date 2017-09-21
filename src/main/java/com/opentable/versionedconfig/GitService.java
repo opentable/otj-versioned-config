@@ -8,10 +8,11 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import javax.annotation.PreDestroy;
 import javax.annotation.concurrent.NotThreadSafe;
@@ -75,7 +76,7 @@ class GitService implements VersioningService {
     @Override
     public VersionedConfigUpdate getCurrentState() {
         return new VersionedConfigUpdate(
-                checkoutDirectory, Stream.empty(), null, latestKnownObjectId.get());
+                checkoutDirectory, Collections.emptySet(), null, latestKnownObjectId.get());
     }
 
     /**
@@ -103,9 +104,10 @@ class GitService implements VersioningService {
         LOG.info("newest head = {}", pulled.toString());
 
         final Set<String> affectedNames = gitOperations.affectedFiles(current, pulled);
-        final Stream<Path> affectedPaths = affectedNames
+        final Set<Path> affectedPaths = affectedNames
                 .stream()
-                .map(Paths::get);
+                .map(Paths::get)
+                .collect(Collectors.toSet());
 
         LOG.info("Update from {} to {} affected paths = {}", current, pulled, affectedNames);
 
