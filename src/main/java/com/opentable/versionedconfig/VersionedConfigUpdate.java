@@ -30,6 +30,10 @@ public final class VersionedConfigUpdate {
     private final ObjectId oldRevision;
     private final ObjectId newRevision;
 
+    public VersionedConfigUpdate(Path basePath, Iterable<Path> changedFiles) {
+        this(basePath, changedFiles, ObjectId.zeroId(), ObjectId.zeroId());
+    }
+
     public VersionedConfigUpdate(Path basePath, Iterable<Path> changedFiles, ObjectId oldRevision, ObjectId newRevision) {
         this.basePath = basePath;
         this.changedFiles = ImmutableSet.copyOf(changedFiles);
