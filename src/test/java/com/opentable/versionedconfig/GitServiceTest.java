@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
@@ -43,6 +45,21 @@ public class GitServiceTest {
     }
 
     @Test
+    public void testUpdates() throws Exception {
+        workFolder.create();
+        final File checkoutSpot = workFolder.newFolder("init");
+        final GitProperties gitProperties = getGitProperties(checkoutSpot);
+        try (final VersioningService service = new GitService(gitProperties)) {
+            final Optional<VersionedConfigUpdate> maybeVcu = service.checkForUpdate();
+            assertThat(maybeVcu).isPresent();
+            final VersionedConfigUpdate vcu = maybeVcu.get();
+            assertThat(vcu.getOldRevisionMetadata()).isEqualTo(ObjectId.zeroId());
+            assertThat(vcu.getNewRevisionMetadata()).isNotNull();
+            assertThat(changeNames(vcu)).contains("foo.txt");
+        }
+    }
+
+    @Test
     public void testAffectedFilesExisting() throws IOException {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("init");
@@ -54,7 +71,7 @@ public class GitServiceTest {
             assertThat(update).isPresent();
 
             VersionedConfigUpdate content = update.get();
-            assertThat(content.getChangedFiles()).containsExactly(Paths.get("foo.txt"));
+            assertThat(content.getChangedFiles()).contains(Paths.get("foo.txt"));
         }
     }
 
@@ -63,14 +80,20 @@ public class GitServiceTest {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("init");
         final GitProperties gitProperties = getGitProperties(checkoutSpot);
+        final Path repo = checkoutSpot.toPath();
         try (final VersioningService service = new GitService(gitProperties)) {
-            remote.editFile("bar.txt", "New files rock!").commit("Extra config files");
 
             Optional<VersionedConfigUpdate> update = service.checkForUpdate();
+            assertThat(update.isPresent());
+            assertThat(changeNames(update.get())).contains("foo.txt");
+
+            remote.editFile("bar.txt", "New files rock!").commit("Extra config files");
+
+            update = service.checkForUpdate();
             assertThat(update).isPresent();
 
             VersionedConfigUpdate content = update.get();
-            assertThat(content.getChangedFiles()).containsExactly(Paths.get("bar.txt"));
+            assertThat(changeNames(content)).containsExactly("bar.txt");
         }
     }
 
@@ -114,6 +137,7 @@ public class GitServiceTest {
     public void testRevisionMetadata() throws IOException {
         final GitProperties gitProperties = getGitProperties(null);
         final VersioningService service = new GitService(gitProperties);
+        service.checkForUpdate();
 
         ObjectId currentCommit = remote.getGitRepo().getRepository().resolve(Constants.HEAD);
         assertThat(service.getCurrentState().getOldRevision()).isEqualTo("<unknown>");
@@ -146,5 +170,11 @@ public class GitServiceTest {
 
     private GitProperties getGitProperties(File checkoutSpot) {
         return new GitProperties(remote.getLocalPath().toUri(), null, null, checkoutSpot, "master");
+    }
+
+    private Set<String> changeNames(VersionedConfigUpdate vcu) {
+        return vcu.getChangedFiles().stream()
+                .map(Object::toString)
+                .collect(Collectors.toSet());
     }
 }

@@ -42,7 +42,6 @@ public class VersioningServiceIntegrationTest {
         GitProperties props = new GitProperties(remote.getLocalPath().toUri(), null, null, null, "master");
         VersioningService repo = VersioningService.forGitRepository(props);
 
-        assertThat(repo.checkForUpdate()).isNotPresent();
         remote.editFile("foo.txt", "Derp derp derp").commit("Additional commit");
         assertThat(repo.checkForUpdate()).isPresent();
 
@@ -54,7 +53,6 @@ public class VersioningServiceIntegrationTest {
         GitProperties props = new GitProperties(remote.getLocalPath().toUri(), null, null, null, "master");
         VersioningService repo = VersioningService.forGitRepository(props);
 
-        assertThat(repo.checkForUpdate()).isNotPresent();
         remote.editFile("bar.txt", "Derp derp derp").commit("Additional commit");
         assertThat(repo.checkForUpdate()).isPresent();
 
@@ -68,7 +66,6 @@ public class VersioningServiceIntegrationTest {
         GitProperties props = new GitProperties(remote.getLocalPath().toUri(), null, null, null, "master");
         VersioningService repo = VersioningService.forGitRepository(props);
 
-        assertThat(repo.checkForUpdate()).isNotPresent();
         remote.editFile("nested/bar.txt", "Derp derp derp").commit("Additional commit");
         assertThat(repo.checkForUpdate()).isPresent();
 
