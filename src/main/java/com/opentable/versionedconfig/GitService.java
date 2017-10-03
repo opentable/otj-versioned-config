@@ -43,14 +43,12 @@ class GitService implements VersioningService {
     GitService(GitProperties serviceConfig) throws VersioningServiceException {
         this.serviceConfig = serviceConfig;
         this.checkoutDirectory = getCheckoutPath();
-        LOG.info("initializing GitService with checkout directory of " + checkoutDirectory);
-
         try {
             this.gitOperations = new GitOperations(serviceConfig, checkoutDirectory);
 
             gitOperations.checkoutBranch(serviceConfig.getBranch());
-            this.latestKnownObjectId = new AtomicReference<>(gitOperations.getCurrentHead());
-            LOG.info("latest SHA = {}", latestKnownObjectId.get());
+            this.latestKnownObjectId = new AtomicReference<>(ObjectId.zeroId());
+            LOG.info("Initializing {}, next update = {}", checkoutDirectory, latestKnownObjectId.get());
 
         } catch (IOException exception) {
             throw new VersioningServiceException("Configuration initialization failed, application can't start", exception);
@@ -63,14 +61,13 @@ class GitService implements VersioningService {
             return configuredFile.toPath();
         }
 
-        Path result;
         try {
-            result = Files.createTempDirectory("config");
+            final Path result = Files.createTempDirectory("config");
+            LOG.info("Checking out into a temporary directory: {}", result);
+            return result;
         } catch (IOException e) {
             throw new VersioningServiceException(e);
         }
-        LOG.info("Checking out into a temporary directory: {}", result);
-        return result;
     }
 
     @Override
@@ -101,17 +98,25 @@ class GitService implements VersioningService {
             LOG.trace("head {} didn't change", current);
             return empty();
         }
-        LOG.info("newest head = {}", pulled.toString());
 
-        final Set<String> affectedNames = gitOperations.affectedFiles(current, pulled);
-        final Set<Path> affectedPaths = affectedNames
-                .stream()
-                .map(Paths::get)
-                .collect(Collectors.toSet());
+        final Set<Path> affectedPaths;
+        if (current.equals(ObjectId.zeroId())) {
+            try {
+                affectedPaths = Files.walk(checkoutDirectory)
+                        .map(p -> checkoutDirectory.relativize(p))
+                        .filter(p -> !p.toString().startsWith(".git"))
+                        .collect(Collectors.toSet());
+            } catch (IOException e) {
+                throw new VersioningServiceException(e);
+            }
+        } else {
+            affectedPaths = gitOperations.affectedFiles(current, pulled)
+                    .stream()
+                    .map(Paths::get)
+                    .collect(Collectors.toSet());
+        }
 
-        LOG.info("Update from {} to {} affected paths = {}", current, pulled, affectedNames);
-
-        LOG.info("Update {} is relevant to my interests", pulled);
+        LOG.info("Update from {} to {} affected paths = {}", current, pulled, affectedPaths);
         latestKnownObjectId.set(pulled);
         return Optional.of(new VersionedConfigUpdate(
                 checkoutDirectory, affectedPaths, current, pulled));
@@ -124,7 +129,7 @@ class GitService implements VersioningService {
 
     @Override
     public String getLatestRevision() {
-        return latestKnownObjectId.get().toString();
+        return latestKnownObjectId.get().getName();
     }
 
     @Override
