@@ -38,7 +38,6 @@ Configuration Properties
 | config.repo.password | password | *your password* |
 | config.repo.local | where to check out repo locally (URI) | frontdoor-config |
 | config.repo.branch | The branch in the configuration repo to read | master |
-| config.repo.file | The configuraation file to read (relative to repo) | /mappings.cfg.tsv |
 
 **Note**: `config.repo.oauth-token` and `config.repo.username/password` are mutually exclusive.
 You should use one or the other, but not both. (Setting an `oauth-token` automatically sets your
