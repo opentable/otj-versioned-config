@@ -37,7 +37,7 @@
   <description>component for polling configuration information from git.</description>
 
   <properties>
-    <dep.jgit.version>4.6.1.201703071140-r</dep.jgit.version>
+    <dep.jgit.version>5.0.1.201806211838-r</dep.jgit.version>
   </properties>
 
   <dependencies>
