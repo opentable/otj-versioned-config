@@ -15,6 +15,8 @@ package com.opentable.versionedconfig;
 
 import java.io.File;
 import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 
 import javax.annotation.Nullable;
 
@@ -24,7 +26,7 @@ import com.google.common.base.Objects;
  * Git metadata properties.
  */
 public class GitProperties {
-    private final URI remoteRepository;
+    private final List<URI> remoteRepositories;
     private final String username;
     private final String password;
     private final File localRepository;
@@ -35,15 +37,28 @@ public class GitProperties {
                          @Nullable String password,
                          @Nullable File localRepository,
                          String branch) {
-        this.remoteRepository = remoteRepository;
+        this(Collections.singletonList(remoteRepository), username, password, localRepository, branch);
+    }
+
+    public GitProperties(List<URI> remoteRepositories,
+                         @Nullable String username,
+                         @Nullable String password,
+                         @Nullable File localRepository,
+                         String branch) {
+        this.remoteRepositories = remoteRepositories;
         this.username = username;
         this.password = password;
         this.localRepository = localRepository;
         this.branch = branch;
     }
 
+    @Deprecated
     public URI getRemoteRepository() {
-        return remoteRepository;
+        return remoteRepositories.get(0);
+    }
+
+    public List<URI> getRemoteRepositories() {
+        return remoteRepositories;
     }
 
     public String getUsername() {
@@ -72,7 +87,7 @@ public class GitProperties {
         }
 
         GitProperties that = (GitProperties) o;
-        return Objects.equal(remoteRepository, that.remoteRepository) &&
+        return Objects.equal(remoteRepositories, that.remoteRepositories) &&
                 Objects.equal(username, that.username) &&
                 Objects.equal(password, that.password) &&
                 Objects.equal(localRepository, that.localRepository) &&
@@ -81,13 +96,13 @@ public class GitProperties {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(remoteRepository, username, password, localRepository, branch);
+        return Objects.hashCode(remoteRepositories, username, password, localRepository, branch);
     }
 
     @Override
     public String toString() {
         return "GitProperties{" +
-                "remoteRepository=" + remoteRepository +
+                "remoteRepositories=" + remoteRepositories +
                 ", username='" + username + '\'' +
                 ", password=<redacted>" +
                 ", localRepository=" + localRepository +

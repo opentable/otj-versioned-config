@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -172,12 +173,12 @@ public class GitServiceTest {
     public void testCredentialsMustBothBeEmptyOrNull() {
         assertThatExceptionOfType(IllegalArgumentException.class)
                 .isThrownBy(() -> VersioningService.forGitRepository(
-                        new GitProperties(null, "username", null, null, "master")))
+                        new GitProperties(Collections.emptyList(), "username", null, null, "master")))
                 .withMessageContaining("must provide username and password");
 
         assertThatExceptionOfType(IllegalArgumentException.class)
                 .isThrownBy(() -> VersioningService.forGitRepository(
-                        new GitProperties(null, null, "password", null, "master")))
+                        new GitProperties(Collections.emptyList(), null, "password", null, "master")))
                 .withMessageContaining("must provide username and password");
     }
 
