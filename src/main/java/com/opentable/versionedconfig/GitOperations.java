@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
@@ -81,7 +82,10 @@ final class GitOperations {
             throws VersioningServiceException, IOException {
         if (Files.exists(checkoutDir) && Files.isDirectory(checkoutDir)) {
             LOG.info("checkout directory {} already exists", checkoutDir);
-            final boolean dirNotEmpty = Files.newDirectoryStream(checkoutDir).iterator().hasNext();
+            final boolean dirNotEmpty;
+            try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(checkoutDir)) {
+                dirNotEmpty = dirStream.iterator().hasNext();
+            }
             if (dirNotEmpty) {
                 return new Git(new FileRepository(checkoutDir.resolve(".git").toFile()));
             } else {
