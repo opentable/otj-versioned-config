@@ -17,6 +17,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 
 import java.io.File;
 import java.net.URI;
+import java.util.List;
 
 import javax.inject.Named;
 
@@ -29,7 +30,7 @@ public class VersionedConfig {
     static final String X_OAUTH_BASIC = "x-oauth-basic";
 
     @Bean
-    public GitProperties defaultVersioningServiceProperties(@Value("${config.repo.remote}") URI remoteRepo,
+    public GitProperties defaultVersioningServiceProperties(@Value("${config.repo.remote}") List<URI> remoteRepo,
                                                             @Value("${config.repo.oauth-token:#{null}}") String token,
                                                             @Value("${config.repo.username:#{null}}") String username,
                                                             @Value("${config.repo.password:#{null}}") String password,
