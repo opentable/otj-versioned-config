@@ -18,12 +18,14 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -45,6 +47,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.transport.CredentialsProvider;
+import org.eclipse.jgit.transport.URIish;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.slf4j.Logger;
@@ -54,10 +57,12 @@ final class GitOperations {
     private static final Logger LOG = LoggerFactory.getLogger(GitOperations.class);
     private final Git git;
     private final Optional<CredentialsProvider> credentials;
+    private final GitProperties config;
 
-    GitOperations(final GitProperties serviceConfig, Path checkoutDir) throws VersioningServiceException, IOException {
-        this.credentials = makeCredentials(serviceConfig.getUsername(), serviceConfig.getPassword());
-        this.git = openRepo(serviceConfig, checkoutDir);
+    GitOperations(final GitProperties config, Path checkoutDir) throws VersioningServiceException, IOException {
+        this.config = config;
+        this.credentials = makeCredentials(config.getUsername(), config.getPassword());
+        this.git = openRepo(config, checkoutDir);
     }
 
     private Optional<CredentialsProvider> makeCredentials(String username, String password) {
@@ -85,33 +90,49 @@ final class GitOperations {
         } else {
             LOG.info("checkout directory {} does not yet exist", checkoutDir);
         }
-        final String cloneSource = cloningUriToGitArgument(serviceConfig.getRemoteRepository());
-        final String cloneBranch = serviceConfig.getBranch();
-        LOG.info("cloning {} (branch {}) to {}", cloneSource, cloneBranch, checkoutDir);
+        final List<URI> remotes = config.getRemoteRepositories();
+        final Git result = upstreamRetry(idx -> {
+            final String cloneBranch = serviceConfig.getBranch();
+            LOG.info("cloning {} (branch {}) to {}", idx, cloneBranch, checkoutDir);
 
-        try {
-            CloneCommand clone = Git.cloneRepository()
-                    .setBare(false)
-                    .setBranch(cloneBranch)
-                    .setDirectory(checkoutDir.toFile())
-                    .setURI(cloneSource);
-            credentials.ifPresent(clone::setCredentialsProvider);
-            return clone.call();
-        } catch (GitAPIException ioe) {
-            throw new VersioningServiceException("Could not clone repo", ioe);
+            try {
+                CloneCommand clone = Git.cloneRepository()
+                        .setBare(false)
+                        .setBranch(cloneBranch)
+                        .setDirectory(checkoutDir.toFile())
+                        .setURI(remotes.get(idx).toString());
+                credentials.ifPresent(clone::setCredentialsProvider);
+                return clone.call();
+            } catch (GitAPIException ioe) {
+                throw new VersioningServiceException("Could not clone repo", ioe);
+            }
+        });
+        for (int i = 0; i < remotes.size(); i++) {
+            try {
+                result.remoteAdd()
+                    .setName("remote" + i)
+                    .setUri(new URIish(remotes.get(i).toString()))
+                    .call();
+            } catch (GitAPIException | URISyntaxException e) {
+                throw new VersioningServiceException("Could not add remote " + remotes.get(i), e);
+            }
         }
+        return result;
     }
 
     boolean pull() throws VersioningServiceException {
         LOG.trace("pulling latest");
-        try {
-            final PullCommand pull = git.pull();
-            credentials.ifPresent(pull::setCredentialsProvider);
-            PullResult result = pull.call();
-            return result.isSuccessful();
-        } catch (GitAPIException e) {
-            throw new VersioningServiceException("could not pull", e);
-        }
+        return upstreamRetry(idx -> {
+            try {
+                final PullCommand pull = git.pull();
+                credentials.ifPresent(pull::setCredentialsProvider);
+                pull.setRemote("remote" + idx);
+                PullResult result = pull.call();
+                return result.isSuccessful();
+            } catch (GitAPIException e) {
+                throw new VersioningServiceException("could not pull", e);
+            }
+        });
     }
 
     @VisibleForTesting
@@ -121,18 +142,6 @@ final class GitOperations {
             git.checkout().setName(branch).call();
         } catch (GitAPIException cause) {
             throw new VersioningServiceException("Could not check out branch " + branch + " from config repo, please ensure it exists", cause);
-        }
-    }
-
-    /**
-     * Converts source repo URIs to something git can deal with on the command line.
-     */
-    String cloningUriToGitArgument(URI remoteRepoURI) throws VersioningServiceException {
-        final String scheme = remoteRepoURI.getScheme();
-        if ("file".equals(scheme)) {
-            return absoluteLocalPath(remoteRepoURI);
-        } else {
-            return remoteRepoURI.toString();
         }
     }
 
@@ -204,5 +213,27 @@ final class GitOperations {
         } catch (GitAPIException | IOException e) {
             throw new VersioningServiceException("Can't get diff", e);
         }
+    }
+
+    private <T> T upstreamRetry(Function<Integer, T> action) {
+        RuntimeException failure = null;
+        int idx = -1;
+        for (URI remote : config.getRemoteRepositories()) {
+            idx += 1;
+            try {
+                return action.apply(idx);
+            } catch (RuntimeException e) {
+                LOG.warn("While fetching remote {}", remote, e);
+                if (failure == null) {
+                    failure = e;
+                } else {
+                    failure.addSuppressed(e);
+                }
+            }
+        }
+        if (failure != null) {
+            throw failure;
+        }
+        throw new IllegalStateException("no remotes to fetch");
     }
 }

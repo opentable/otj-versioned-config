@@ -18,12 +18,15 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.google.common.collect.ImmutableList;
 
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
@@ -180,6 +183,21 @@ public class GitServiceTest {
                 .isThrownBy(() -> VersioningService.forGitRepository(
                         new GitProperties(Collections.emptyList(), null, "password", null, "master")))
                 .withMessageContaining("must provide username and password");
+    }
+
+    @Test
+    public void testFallbackPull() throws Exception {
+        workFolder.create();
+        final File checkoutSpot = workFolder.newFolder("init");
+        final GitProperties gitProperties = new GitProperties(ImmutableList.of(URI.create("git://example.invalid"), remote.getLocalPath().toUri()), null, null, checkoutSpot, "master");
+        try (final VersioningService service = new GitService(gitProperties)) {
+            final Optional<VersionedConfigUpdate> maybeVcu = service.checkForUpdate();
+            assertThat(maybeVcu).isPresent();
+            final VersionedConfigUpdate vcu = maybeVcu.get();
+            assertThat(vcu.getOldRevisionMetadata()).isEqualTo(ObjectId.zeroId());
+            assertThat(vcu.getNewRevisionMetadata()).isNotNull();
+            assertThat(changeNames(vcu)).contains("foo.txt");
+        }
     }
 
     private GitProperties getGitProperties(File checkoutSpot) {
