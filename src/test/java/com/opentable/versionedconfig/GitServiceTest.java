@@ -31,7 +31,12 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.slf4j.LoggerFactory;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+
+import com.opentable.logging.CaptureAppender;
 import com.opentable.versionedconfig.testing.GitRule;
 
 public class GitServiceTest {
@@ -171,6 +176,9 @@ public class GitServiceTest {
 
     @Test
     public void testFallbackPull() throws Exception {
+        final CaptureAppender ca = new CaptureAppender();
+        ((Logger) LoggerFactory.getLogger(GitOperations.class)).addAppender(ca);
+        ca.start();
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("init");
         final GitProperties gitProperties = new GitProperties(ImmutableList.of(URI.create("git://example.invalid"), remote.getLocalPath().toUri()), checkoutSpot, "master");
@@ -182,6 +190,10 @@ public class GitServiceTest {
             assertThat(vcu.getNewRevisionMetadata()).isNotNull();
             assertThat(changeNames(vcu)).contains("foo.txt");
         }
+        assertThat(ca.captured).anyMatch(e ->
+                e.getLevel() == Level.WARN &&
+                e.getFormattedMessage().contains("While fetching remote git://example.invalid")
+        );
     }
 
     private GitProperties getGitProperties(File checkoutSpot) {
