@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -46,20 +47,20 @@ class GitService implements VersioningService {
     private static final Logger LOG = LoggerFactory.getLogger(GitService.class);
 
     private final Path checkoutDirectory;
-    private final GitProperties serviceConfig;
+    private final GitProperties config;
 
     private final GitOperations gitOperations;
 
     private AtomicReference<ObjectId> latestKnownObjectId;
 
     @Inject
-    GitService(GitProperties serviceConfig) throws VersioningServiceException {
-        this.serviceConfig = serviceConfig;
+    GitService(GitProperties config) throws VersioningServiceException {
+        this.config = config;
         this.checkoutDirectory = getCheckoutPath();
         try {
-            this.gitOperations = new GitOperations(serviceConfig, checkoutDirectory);
+            this.gitOperations = new GitOperations(config, checkoutDirectory);
 
-            gitOperations.checkoutBranch(serviceConfig.getBranch());
+            gitOperations.checkoutBranch(config.getBranch());
             this.latestKnownObjectId = new AtomicReference<>(ObjectId.zeroId());
             LOG.info("Initializing {}, next update = {}", checkoutDirectory, latestKnownObjectId.get());
 
@@ -69,7 +70,7 @@ class GitService implements VersioningService {
     }
 
     private Path getCheckoutPath() {
-        final File configuredFile = serviceConfig.getLocalRepository();
+        final File configuredFile = config.getLocalRepository();
         if (configuredFile != null) {
             return configuredFile.toPath();
         }
@@ -145,20 +146,19 @@ class GitService implements VersioningService {
         return latestKnownObjectId.get().getName();
     }
 
-    @Override
-    public URI getRemoteRepository() {
-        return serviceConfig.getRemoteRepository();
+    public List<URI> getRemoteRepositories() {
+        return config.getRemoteRepositories();
     }
 
     @Override
     public String getBranch() {
-        return serviceConfig.getBranch();
+        return config.getBranch();
     }
 
     @Override
     @PreDestroy
     public void close() throws IOException {
-        if (serviceConfig.getLocalRepository() != null) {
+        if (config.getLocalRepository() != null) {
             return;
         }
 

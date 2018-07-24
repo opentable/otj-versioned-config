@@ -14,14 +14,12 @@
 package com.opentable.versionedconfig;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -141,13 +139,12 @@ public class GitServiceTest {
     }
 
     @Test
-    public void testAccessToRemoteRepoAndBranch() throws IOException {
+    public void testAccessToBranch() throws IOException {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
         final GitProperties gitProperties = getGitProperties(checkoutSpot);
         final VersioningService service = VersioningService.forGitRepository(gitProperties);
         assertThat(service.getBranch()).isEqualTo(gitProperties.getBranch());
-        assertThat(service.getRemoteRepository()).isEqualTo(gitProperties.getRemoteRepository());
     }
 
     @Test
@@ -173,23 +170,10 @@ public class GitServiceTest {
     }
 
     @Test
-    public void testCredentialsMustBothBeEmptyOrNull() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> VersioningService.forGitRepository(
-                        new GitProperties(Collections.emptyList(), "username", null, null, "master")))
-                .withMessageContaining("must provide username and password");
-
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> VersioningService.forGitRepository(
-                        new GitProperties(Collections.emptyList(), null, "password", null, "master")))
-                .withMessageContaining("must provide username and password");
-    }
-
-    @Test
     public void testFallbackPull() throws Exception {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("init");
-        final GitProperties gitProperties = new GitProperties(ImmutableList.of(URI.create("git://example.invalid"), remote.getLocalPath().toUri()), null, null, checkoutSpot, "master");
+        final GitProperties gitProperties = new GitProperties(ImmutableList.of(URI.create("git://example.invalid"), remote.getLocalPath().toUri()), checkoutSpot, "master");
         try (final VersioningService service = new GitService(gitProperties)) {
             final Optional<VersionedConfigUpdate> maybeVcu = service.checkForUpdate();
             assertThat(maybeVcu).isPresent();
@@ -201,7 +185,7 @@ public class GitServiceTest {
     }
 
     private GitProperties getGitProperties(File checkoutSpot) {
-        return new GitProperties(remote.getLocalPath().toUri(), null, null, checkoutSpot, "master");
+        return new GitProperties(remote.getLocalPath().toUri(), checkoutSpot, "master");
     }
 
     private Set<String> changeNames(VersionedConfigUpdate vcu) {

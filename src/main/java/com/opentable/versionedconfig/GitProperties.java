@@ -27,46 +27,25 @@ import com.google.common.base.Objects;
  */
 public class GitProperties {
     private final List<URI> remoteRepositories;
-    private final String username;
-    private final String password;
     private final File localRepository;
     private final String branch;
 
     public GitProperties(URI remoteRepository,
-                         @Nullable String username,
-                         @Nullable String password,
                          @Nullable File localRepository,
                          String branch) {
-        this(Collections.singletonList(remoteRepository), username, password, localRepository, branch);
+        this(Collections.singletonList(remoteRepository), localRepository, branch);
     }
 
     public GitProperties(List<URI> remoteRepositories,
-                         @Nullable String username,
-                         @Nullable String password,
                          @Nullable File localRepository,
                          String branch) {
         this.remoteRepositories = remoteRepositories;
-        this.username = username;
-        this.password = password;
         this.localRepository = localRepository;
         this.branch = branch;
     }
 
-    @Deprecated
-    public URI getRemoteRepository() {
-        return remoteRepositories.get(0);
-    }
-
     public List<URI> getRemoteRepositories() {
         return remoteRepositories;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getPassword() {
-        return password;
     }
 
     public File getLocalRepository() {
@@ -88,23 +67,19 @@ public class GitProperties {
 
         GitProperties that = (GitProperties) o;
         return Objects.equal(remoteRepositories, that.remoteRepositories) &&
-                Objects.equal(username, that.username) &&
-                Objects.equal(password, that.password) &&
                 Objects.equal(localRepository, that.localRepository) &&
                 Objects.equal(branch, that.branch);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(remoteRepositories, username, password, localRepository, branch);
+        return Objects.hashCode(remoteRepositories, localRepository, branch);
     }
 
     @Override
     public String toString() {
         return "GitProperties{" +
                 "remoteRepositories=" + remoteRepositories +
-                ", username='" + username + '\'' +
-                ", password=<redacted>" +
                 ", localRepository=" + localRepository +
                 ", branch='" + branch + '\'' +
                 '}';

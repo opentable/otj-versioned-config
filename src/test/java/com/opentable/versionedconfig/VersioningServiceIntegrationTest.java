@@ -32,7 +32,7 @@ public class VersioningServiceIntegrationTest {
 
     @Test
     public void testVersioningServiceCanClone() {
-        GitProperties props = new GitProperties(remote.getLocalPath().toUri(), null, null, null, "master");
+        GitProperties props = new GitProperties(remote.getLocalPath().toUri(), null, "master");
         VersioningService repo = VersioningService.forGitRepository(props);
 
         Path testFile = repo.getCurrentState().getBasePath().resolve("foo.txt");
@@ -43,7 +43,7 @@ public class VersioningServiceIntegrationTest {
 
     @Test
     public void testIsClone() {
-        GitProperties props = new GitProperties(remote.getLocalPath().toUri(), null, null, null, "master");
+        GitProperties props = new GitProperties(remote.getLocalPath().toUri(), null, "master");
         VersioningService repo = VersioningService.forGitRepository(props);
 
         assertThat(repo.checkForUpdate()).isPresent();
@@ -55,7 +55,7 @@ public class VersioningServiceIntegrationTest {
 
     @Test
     public void testUpdate() {
-        GitProperties props = new GitProperties(remote.getLocalPath().toUri(), null, null, null, "master");
+        GitProperties props = new GitProperties(remote.getLocalPath().toUri(), null, "master");
         VersioningService repo = VersioningService.forGitRepository(props);
 
         assertThat(repo.checkForUpdate()).isPresent();
@@ -68,7 +68,7 @@ public class VersioningServiceIntegrationTest {
 
     @Test
     public void testNewFiles() {
-        GitProperties props = new GitProperties(remote.getLocalPath().toUri(), null, null, null, "master");
+        GitProperties props = new GitProperties(remote.getLocalPath().toUri(), null, "master");
         VersioningService repo = VersioningService.forGitRepository(props);
 
         assertThat(repo.checkForUpdate()).isPresent();
@@ -83,7 +83,7 @@ public class VersioningServiceIntegrationTest {
 
     @Test
     public void testSubdirectories() {
-        GitProperties props = new GitProperties(remote.getLocalPath().toUri(), null, null, null, "master");
+        GitProperties props = new GitProperties(remote.getLocalPath().toUri(), null, "master");
         VersioningService repo = VersioningService.forGitRepository(props);
 
         remote.editFile("nested/bar.txt", "Derp derp derp").commit("Additional commit");

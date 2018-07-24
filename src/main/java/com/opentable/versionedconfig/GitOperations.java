@@ -13,8 +13,6 @@
  */
 package com.opentable.versionedconfig;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -24,7 +22,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -33,10 +30,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.PullResult;
+import org.eclipse.jgit.api.TransportCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
@@ -47,7 +46,6 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
-import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.URIish;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
@@ -57,25 +55,18 @@ import org.slf4j.LoggerFactory;
 final class GitOperations {
     private static final Logger LOG = LoggerFactory.getLogger(GitOperations.class);
     private final Git git;
-    private final Optional<CredentialsProvider> credentials;
     private final GitProperties config;
 
     GitOperations(final GitProperties config, Path checkoutDir) throws VersioningServiceException, IOException {
         this.config = config;
-        this.credentials = makeCredentials(config.getUsername(), config.getPassword());
         this.git = openRepo(config, checkoutDir);
     }
 
-    private Optional<CredentialsProvider> makeCredentials(String username, String password) {
-        boolean missingUsername = isNullOrEmpty(username);
-        boolean missingPassword = isNullOrEmpty(password);
-
-        if (missingUsername && missingPassword) {
-            return Optional.empty();
-        } else if (missingUsername || missingPassword) {
-            throw new IllegalArgumentException("must provide username and password, or both must be empty/null");
+    void configureCredentials(TransportCommand<?, ?> op, URI uri) {
+        final String ui = uri.getUserInfo();
+        if (!StringUtils.isBlank(ui)) {
+            op.setCredentialsProvider(new UsernamePasswordCredentialsProvider(StringUtils.substringBefore(ui, ":"), StringUtils.substringAfter(ui, ":")));
         }
-        return Optional.of(new UsernamePasswordCredentialsProvider(username, password));
     }
 
     private Git openRepo(final GitProperties serviceConfig, Path checkoutDir)
@@ -95,17 +86,18 @@ final class GitOperations {
             LOG.info("checkout directory {} does not yet exist", checkoutDir);
         }
         final List<URI> remotes = config.getRemoteRepositories();
-        final Git result = upstreamRetry(idx -> {
+        final Git result = upstreamRetry(remoteIndex -> {
             final String cloneBranch = serviceConfig.getBranch();
-            LOG.info("cloning {} (branch {}) to {}", idx, cloneBranch, checkoutDir);
+            LOG.info("cloning {} (branch {}) to {}", remoteIndex, cloneBranch, checkoutDir);
 
             try {
+                final URI uri = remotes.get(remoteIndex);
                 CloneCommand clone = Git.cloneRepository()
                         .setBare(false)
                         .setBranch(cloneBranch)
                         .setDirectory(checkoutDir.toFile())
-                        .setURI(remotes.get(idx).toString());
-                credentials.ifPresent(clone::setCredentialsProvider);
+                        .setURI(uri.toString());
+                configureCredentials(clone, uri);
                 return clone.call();
             } catch (GitAPIException ioe) {
                 throw new VersioningServiceException("Could not clone repo", ioe);
@@ -126,11 +118,11 @@ final class GitOperations {
 
     boolean pull() throws VersioningServiceException {
         LOG.trace("pulling latest");
-        return upstreamRetry(idx -> {
+        return upstreamRetry(remoteIndex -> {
             try {
                 final PullCommand pull = git.pull();
-                credentials.ifPresent(pull::setCredentialsProvider);
-                pull.setRemote("remote" + idx);
+                configureCredentials(pull, config.getRemoteRepositories().get(remoteIndex));
+                pull.setRemote("remote" + remoteIndex);
                 PullResult result = pull.call();
                 return result.isSuccessful();
             } catch (GitAPIException e) {
