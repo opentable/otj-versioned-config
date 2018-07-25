@@ -21,6 +21,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 
 /**
  * Git metadata properties.
@@ -39,7 +40,7 @@ public class GitProperties {
     public GitProperties(List<URI> remoteRepositories,
                          @Nullable File localRepository,
                          String branch) {
-        this.remoteRepositories = remoteRepositories;
+        this.remoteRepositories = ImmutableList.copyOf(remoteRepositories);
         this.localRepository = localRepository;
         this.branch = branch;
     }
