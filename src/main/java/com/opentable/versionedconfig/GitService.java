@@ -50,7 +50,7 @@ class GitService implements VersioningService {
 
     private final GitOperations gitOperations;
 
-    private AtomicReference<ObjectId> latestKnownObjectId;
+    private final AtomicReference<ObjectId> latestKnownObjectId;
 
     @Inject
     GitService(GitProperties config) throws VersioningServiceException {
