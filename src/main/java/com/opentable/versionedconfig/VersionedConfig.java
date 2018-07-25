@@ -13,8 +13,8 @@
  */
 package com.opentable.versionedconfig;
 
-import java.io.File;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.List;
 
 import javax.inject.Named;
@@ -29,7 +29,7 @@ public class VersionedConfig {
 
     @Bean
     public GitProperties defaultVersioningServiceProperties(@Value("${config.repo.remote}") List<URI> remoteRepo,
-                                                            @Value("${config.repo.local:#{null}}") File localPath,
+                                                            @Value("${config.repo.local:#{null}}") Path localPath,
                                                             @Value("${config.repo.branch:master}") String branch) {
         return new GitProperties(remoteRepo, localPath, branch);
     }

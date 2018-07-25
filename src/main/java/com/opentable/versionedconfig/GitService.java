@@ -15,7 +15,6 @@ package com.opentable.versionedconfig;
 
 import static java.util.Optional.empty;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -70,9 +69,9 @@ class GitService implements VersioningService {
     }
 
     private Path getCheckoutPath() {
-        final File configuredFile = config.getLocalRepository();
+        final Path configuredFile = config.getLocalRepository();
         if (configuredFile != null) {
-            return configuredFile.toPath();
+            return configuredFile;
         }
 
         try {

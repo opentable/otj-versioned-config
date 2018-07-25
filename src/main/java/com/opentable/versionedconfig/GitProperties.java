@@ -13,8 +13,8 @@
  */
 package com.opentable.versionedconfig;
 
-import java.io.File;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,17 +28,17 @@ import com.google.common.collect.ImmutableList;
  */
 public class GitProperties {
     private final List<URI> remoteRepositories;
-    private final File localRepository;
+    private final Path localRepository;
     private final String branch;
 
     public GitProperties(URI remoteRepository,
-                         @Nullable File localRepository,
+                         @Nullable Path localRepository,
                          String branch) {
         this(Collections.singletonList(remoteRepository), localRepository, branch);
     }
 
     public GitProperties(List<URI> remoteRepositories,
-                         @Nullable File localRepository,
+                         @Nullable Path localRepository,
                          String branch) {
         this.remoteRepositories = ImmutableList.copyOf(remoteRepositories);
         this.localRepository = localRepository;
@@ -49,7 +49,7 @@ public class GitProperties {
         return remoteRepositories;
     }
 
-    public File getLocalRepository() {
+    public Path getLocalRepository() {
         return localRepository;
     }
 

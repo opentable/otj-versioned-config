@@ -53,7 +53,7 @@ public class GitServiceTest {
     public void testCloneOnInitialize() throws IOException {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("init");
-        final GitProperties gitProperties = getGitProperties(checkoutSpot);
+        final GitProperties gitProperties = getGitProperties(checkoutSpot.toPath());
         try (final VersioningService service = new GitService(gitProperties)) {
             assertThat(checkoutSpot.exists()).isTrue();
             assertThat(checkoutSpot.toPath().resolve("foo.txt")).hasContent("Hello, world");
@@ -68,7 +68,7 @@ public class GitServiceTest {
     public void testUpdates() throws Exception {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("init");
-        final GitProperties gitProperties = getGitProperties(checkoutSpot);
+        final GitProperties gitProperties = getGitProperties(checkoutSpot.toPath());
         try (final VersioningService service = new GitService(gitProperties)) {
             final Optional<VersionedConfigUpdate> maybeVcu = service.checkForUpdate();
             assertThat(maybeVcu).isPresent();
@@ -83,7 +83,7 @@ public class GitServiceTest {
     public void testAffectedFilesExisting() throws IOException {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("init");
-        final GitProperties gitProperties = getGitProperties(checkoutSpot);
+        final GitProperties gitProperties = getGitProperties(checkoutSpot.toPath());
         try (final VersioningService service = new GitService(gitProperties)) {
             remote.appendFile("foo.txt", "!!!").commit("More config");
 
@@ -99,7 +99,7 @@ public class GitServiceTest {
     public void testAffectedFilesNew() throws IOException {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("init");
-        final GitProperties gitProperties = getGitProperties(checkoutSpot);
+        final GitProperties gitProperties = getGitProperties(checkoutSpot.toPath());
         final Path repo = checkoutSpot.toPath();
         try (final VersioningService service = new GitService(gitProperties)) {
 
@@ -121,7 +121,7 @@ public class GitServiceTest {
     public void testClosePreservesLocalClone() throws IOException {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("init");
-        final GitProperties gitProperties = getGitProperties(checkoutSpot);
+        final GitProperties gitProperties = getGitProperties(checkoutSpot.toPath());
         final VersioningService service = new GitService(gitProperties);
 
         Path testFile = service.getCurrentState().getBasePath().resolve("foo.txt");
@@ -147,7 +147,7 @@ public class GitServiceTest {
     public void testAccessToBranch() throws IOException {
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("otpl-deploy");
-        final GitProperties gitProperties = getGitProperties(checkoutSpot);
+        final GitProperties gitProperties = getGitProperties(checkoutSpot.toPath());
         final VersioningService service = VersioningService.forGitRepository(gitProperties);
         assertThat(service.getBranch()).isEqualTo(gitProperties.getBranch());
     }
@@ -181,7 +181,7 @@ public class GitServiceTest {
         ca.start();
         workFolder.create();
         final File checkoutSpot = workFolder.newFolder("init");
-        final GitProperties gitProperties = new GitProperties(ImmutableList.of(URI.create("git://example.invalid"), remote.getLocalPath().toUri()), checkoutSpot, "master");
+        final GitProperties gitProperties = new GitProperties(ImmutableList.of(URI.create("git://example.invalid"), remote.getLocalPath().toUri()), checkoutSpot.toPath(), "master");
         try (final VersioningService service = new GitService(gitProperties)) {
             final Optional<VersionedConfigUpdate> maybeVcu = service.checkForUpdate();
             assertThat(maybeVcu).isPresent();
@@ -196,7 +196,7 @@ public class GitServiceTest {
         );
     }
 
-    private GitProperties getGitProperties(File checkoutSpot) {
+    private GitProperties getGitProperties(Path checkoutSpot) {
         return new GitProperties(remote.getLocalPath().toUri(), checkoutSpot, "master");
     }
 
