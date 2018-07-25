@@ -61,9 +61,9 @@ final class GitOperations {
         this.git = openRepo(config, checkoutDir);
     }
 
-    void configureCredentials(TransportCommand<?, ?> op, URI uri) {
+    private void configureCredentials(TransportCommand<?, ?> op, URI uri) {
         final String ui = uri.getUserInfo();
-        if (!StringUtils.isBlank(ui)) {
+        if (StringUtils.isNotBlank(ui)) {
             op.setCredentialsProvider(new UsernamePasswordCredentialsProvider(StringUtils.substringBefore(ui, ":"), StringUtils.substringAfter(ui, ":")));
         }
     }
