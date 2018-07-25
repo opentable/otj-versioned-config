@@ -13,7 +13,6 @@
  */
 package com.opentable.versionedconfig;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -26,7 +25,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 
 import org.apache.commons.lang3.StringUtils;
@@ -127,17 +125,6 @@ final class GitOperations {
             git.checkout().setName(branch).call();
         } catch (GitAPIException cause) {
             throw new VersioningServiceException("Could not check out branch " + branch + " from config repo, please ensure it exists", cause);
-        }
-    }
-
-    String absoluteLocalPath(URI remoteRepoURI) throws VersioningServiceException {
-        Preconditions.checkState("file".equals(remoteRepoURI.getScheme()), "Can only deal with file URLs");
-        Preconditions.checkState(remoteRepoURI.getHost() == null, "Can only deal with local URLs");
-        try {
-            final String path = remoteRepoURI.toURL().getPath();
-            return new File(path).getCanonicalFile().getPath();
-        } catch (IOException e) {
-            throw new VersioningServiceException("remote URI format invalid", e);
         }
     }
 
