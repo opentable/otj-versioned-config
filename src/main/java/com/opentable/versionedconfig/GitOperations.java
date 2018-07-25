@@ -193,9 +193,13 @@ final class GitOperations {
         for (URI remote : config.getRemoteRepositories()) {
             idx += 1;
             try {
-                return action.apply(idx);
+                final T result = action.apply(idx);
+                if (failure != null) {
+                    LOG.info("remote {} '{}' succeeded", idx, remote);
+                }
+                return result;
             } catch (RuntimeException e) {
-                LOG.warn("While fetching remote {}", remote, e);
+                LOG.warn("While fetching remote {}, retrying", remote, e);
                 if (failure == null) {
                     failure = e;
                 } else {
