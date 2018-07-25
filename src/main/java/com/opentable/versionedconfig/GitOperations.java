@@ -17,7 +17,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
@@ -71,19 +70,9 @@ final class GitOperations {
 
     private Git openRepo(final GitProperties serviceConfig, Path checkoutDir)
             throws VersioningServiceException, IOException {
-        if (Files.exists(checkoutDir) && Files.isDirectory(checkoutDir)) {
-            LOG.info("checkout directory {} already exists", checkoutDir);
-            final boolean dirNotEmpty;
-            try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(checkoutDir)) {
-                dirNotEmpty = dirStream.iterator().hasNext();
-            }
-            if (dirNotEmpty) {
-                return new Git(new FileRepository(checkoutDir.resolve(".git").toFile()));
-            } else {
-                LOG.info("checkout directory {} exists but is empty, can reuse", checkoutDir);
-            }
-        } else {
-            LOG.info("checkout directory {} does not yet exist", checkoutDir);
+        if (Files.isDirectory(checkoutDir) && Files.exists(checkoutDir.resolve(".git"))) {
+            LOG.info("Using existing checkout directory {}", checkoutDir);
+            return new Git(new FileRepository(checkoutDir.resolve(".git").toFile()));
         }
         final List<URI> remotes = config.getRemoteRepositories();
         final Git result = upstreamRetry(remoteIndex -> {
