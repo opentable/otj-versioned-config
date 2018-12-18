@@ -19,7 +19,7 @@
   <parent>
     <groupId>com.opentable</groupId>
     <artifactId>otj-parent-spring</artifactId>
-    <version>162</version>
+    <version>183-SNAPSHOT</version>
   </parent>
 
   <scm>
@@ -37,7 +37,9 @@
   <description>component for polling configuration information from git.</description>
 
   <properties>
-    <dep.jgit.version>5.0.1.201806211838-r</dep.jgit.version>
+    <dep.jgit.version>5.1.3.201810200350-r</dep.jgit.version>
+    <dep.otj-core.version>1.6.1-SNAPSHOT</dep.otj-core.version>
+    <dep.otj-logging.version>3.0.1-SNAPSHOT</dep.otj-logging.version>
   </properties>
 
   <dependencies>
