@@ -16,15 +16,22 @@ package com.opentable.versionedconfig;
 import java.io.Closeable;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.Set;
+
+import org.eclipse.jgit.lib.ObjectId;
 
 public interface VersioningService extends Closeable {
     VersionedConfigUpdate getCurrentState();
 
     Optional<VersionedConfigUpdate> checkForUpdate() throws VersioningServiceException;
 
+    Set<Path> getAffectedPaths(ObjectId currentHash, ObjectId newHash);
+
     Path getCheckoutDirectory();
 
     String getLatestRevision();
+
+    Optional<ObjectId> getLatestRevisionOid();
 
     String getBranch();
 

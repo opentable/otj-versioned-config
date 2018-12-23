@@ -14,7 +14,8 @@
 package com.opentable.versionedconfig;
 
 import java.net.URI;
-import java.nio.file.Path;
+import
+        java.nio.file.Path;
 import java.util.List;
 
 import javax.inject.Named;
