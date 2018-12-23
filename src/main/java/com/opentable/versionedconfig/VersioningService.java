@@ -31,7 +31,7 @@ public interface VersioningService extends Closeable {
 
     String getLatestRevision();
 
-    Optional<ObjectId> getLatestRevisionOid();
+    Optional<ObjectId> getHead();
 
     String getBranch();
 

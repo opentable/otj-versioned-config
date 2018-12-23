@@ -150,9 +150,10 @@ class GitService implements VersioningService {
         return latestKnownObjectId.get().getName();
     }
 
+
     @Override
-    public Optional<ObjectId> getLatestRevisionOid() {
-        return Optional.ofNullable(latestKnownObjectId.get());
+    public Optional<ObjectId> getHead() {
+        return Optional.ofNullable(gitOperations.getCurrentHead());
     }
 
     public List<URI> getRemoteRepositories() {
