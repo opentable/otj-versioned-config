@@ -112,27 +112,32 @@ class GitService implements VersioningService {
             return empty();
         }
 
+        final Set<Path> affectedPaths = getAffectedPaths(current, pulled);
+        latestKnownObjectId.set(pulled);
+        return Optional.of(new VersionedConfigUpdate(
+                checkoutDirectory, affectedPaths, current, pulled));
+    }
+
+    @Override
+    public Set<Path> getAffectedPaths(ObjectId currentHash, ObjectId newHash ) {
         final Set<Path> affectedPaths;
-        if (current.equals(ObjectId.zeroId())) {
+        if (currentHash.equals(ObjectId.zeroId()) || newHash.equals(ObjectId.zeroId())) {
             try {
                 affectedPaths = Files.walk(checkoutDirectory)
-                        .map(p -> checkoutDirectory.relativize(p))
+                        .map(checkoutDirectory::relativize)
                         .filter(p -> !p.toString().startsWith(".git"))
                         .collect(Collectors.toSet());
             } catch (IOException e) {
                 throw new VersioningServiceException(e);
             }
         } else {
-            affectedPaths = gitOperations.affectedFiles(current, pulled)
+            affectedPaths = gitOperations.affectedFiles(currentHash, newHash)
                     .stream()
                     .map(Paths::get)
                     .collect(Collectors.toSet());
         }
-
-        LOG.info("Update from {} to {} affected paths = {}", current, pulled, affectedPaths);
-        latestKnownObjectId.set(pulled);
-        return Optional.of(new VersionedConfigUpdate(
-                checkoutDirectory, affectedPaths, current, pulled));
+        LOG.info("Update from {} to {} affected paths = {}", currentHash, newHash, affectedPaths);
+        return affectedPaths;
     }
 
     @Override
@@ -143,6 +148,12 @@ class GitService implements VersioningService {
     @Override
     public String getLatestRevision() {
         return latestKnownObjectId.get().getName();
+    }
+
+
+    @Override
+    public Optional<ObjectId> getHead() {
+        return Optional.ofNullable(gitOperations.getCurrentHead());
     }
 
     public List<URI> getRemoteRepositories() {
