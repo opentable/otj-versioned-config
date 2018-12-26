@@ -124,7 +124,7 @@ class GitService implements VersioningService {
         if (currentHash.equals(ObjectId.zeroId()) || newHash.equals(ObjectId.zeroId())) {
             try {
                 affectedPaths = Files.walk(checkoutDirectory)
-                        .map(p -> checkoutDirectory.relativize(p))
+                        .map(checkoutDirectory::relativize)
                         .filter(p -> !p.toString().startsWith(".git"))
                         .collect(Collectors.toSet());
             } catch (IOException e) {
