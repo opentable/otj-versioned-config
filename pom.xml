@@ -19,7 +19,7 @@
   <parent>
     <groupId>com.opentable</groupId>
     <artifactId>otj-parent-spring</artifactId>
-    <version>183-SNAPSHOT</version>
+    <version>184</version>
   </parent>
 
   <scm>
@@ -38,8 +38,6 @@
 
   <properties>
     <dep.jgit.version>5.1.3.201810200350-r</dep.jgit.version>
-    <dep.otj-core.version>1.6.1-SNAPSHOT</dep.otj-core.version>
-    <dep.otj-logging.version>3.0.1-SNAPSHOT</dep.otj-logging.version>
   </properties>
 
   <dependencies>
