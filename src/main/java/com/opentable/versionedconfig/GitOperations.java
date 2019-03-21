@@ -108,9 +108,12 @@ final class GitOperations {
         return upstreamRetry(remoteIndex -> {
             try {
                 final PullCommand pull = git.pull();
+                LOG.trace("Git pull completed");
                 configureCredentials(pull, config.getRemoteRepositories().get(remoteIndex));
+                LOG.trace("Configuration of credentials completed, setting remote {}", remoteIndex);
                 pull.setRemote("remote" + remoteIndex);
                 PullResult result = pull.call();
+                LOG.trace("Got result {}", result);
                 return result.isSuccessful();
             } catch (GitAPIException e) {
                 throw new VersioningServiceException("could not pull", e);
@@ -147,7 +150,9 @@ final class GitOperations {
     }
 
     Set<String> affectedFiles(ObjectId oldId, ObjectId newId) throws VersioningServiceException {
+        LOG.trace("innerAffectedFiles {}, {}", oldId, newId);
         final List<DiffEntry> diffEntries = affectedFilesBetweenCommits(oldId, newId);
+        LOG.trace("diff entries {}", diffEntries);
         final Set<String> items = diffEntries.stream()
                 .map(this::relevantDiffPath)
                 .collect(Collectors.toSet());

@@ -100,19 +100,23 @@ class GitService implements VersioningService {
      */
     @Override
     public Optional<VersionedConfigUpdate> checkForUpdate() throws VersioningServiceException {
+        LOG.trace("checkForUpdate");
         if (!gitOperations.pull()) {
             LOG.trace("pull did nothing");
             return empty();
         }
 
         final ObjectId pulled = gitOperations.getCurrentHead();
+        LOG.trace("Get currenthead {}", pulled);
         final ObjectId current = latestKnownObjectId.get();
+        LOG.trace("Current {}", current);
         if (pulled.equals(current)) {
             LOG.trace("head {} didn't change", current);
             return empty();
         }
-
+        LOG.trace("Gonna call getAffectedPatth");
         final Set<Path> affectedPaths = getAffectedPaths(current, pulled);
+        LOG.trace("AffectedPaths {}", affectedPaths);
         latestKnownObjectId.set(pulled);
         return Optional.of(new VersionedConfigUpdate(
                 checkoutDirectory, affectedPaths, current, pulled));
@@ -123,6 +127,7 @@ class GitService implements VersioningService {
         final Set<Path> affectedPaths;
         if (currentHash.equals(ObjectId.zeroId()) || newHash.equals(ObjectId.zeroId())) {
             try {
+                LOG.trace("Start from scratch");
                 affectedPaths = Files.walk(checkoutDirectory)
                         .map(checkoutDirectory::relativize)
                         .filter(p -> !p.toString().startsWith(".git"))
@@ -130,6 +135,7 @@ class GitService implements VersioningService {
             } catch (IOException e) {
                 throw new VersioningServiceException(e);
             }
+            LOG.trace("Use innerAffectedFile");
         } else {
             affectedPaths = gitOperations.affectedFiles(currentHash, newHash)
                     .stream()
