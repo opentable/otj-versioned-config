@@ -135,8 +135,11 @@ final class GitOperations {
         LOG.trace("getCurrentHead");
         try {
             final ObjectId head = git.getRepository().resolve(Constants.HEAD);
+            LOG.trace("resolved {}", head);
             final Iterable<RevCommit> commits = git.log().add(head).setMaxCount(1).call();
+            LOG.trace("commits done");
             final Iterator<RevCommit> commIterator = commits.iterator();
+            LOG.trace("Got iterator");
             if (commIterator.hasNext()) {
                 final ObjectId id = commIterator.next().getId();
                 LOG.trace("getCurrentHead got id {}", id);
