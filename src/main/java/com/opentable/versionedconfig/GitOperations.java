@@ -114,32 +114,7 @@ final class GitOperations {
                 LOG.trace("Configuration of credentials completed, setting remote {}", remoteIndex);
                 pull.setRemote("remote" + remoteIndex);
                 // Added but not deployed yet
-                pull.setProgressMonitor(new ProgressMonitor() {
-                    @Override
-                    public void start(final int totalTasks) {
-                        LOG.trace("start {}", totalTasks);
-                    }
-
-                    @Override
-                    public void beginTask(final String title, final int totalWork) {
-                        LOG.trace("beginTask {}, {}", title, totalWork);
-                    }
-
-                    @Override
-                    public void update(final int completed) {
-                        LOG.trace("update {}", completed);
-                    }
-
-                    @Override
-                    public void endTask() {
-                        LOG.trace("endTask");
-                    }
-
-                    @Override
-                    public boolean isCancelled() {
-                        return false;
-                    }
-                });
+                pull.setProgressMonitor(LOGGING_PROGRESS_MONITOR);
                 PullResult result = pull.call();
                 LOG.trace("Got result {}", result);
                 return result.isSuccessful();
@@ -247,5 +222,33 @@ final class GitOperations {
             throw failure;
         }
         throw new IllegalStateException("no remotes to fetch");
+    }
+
+    private static final LoggingProgressMonitor LOGGING_PROGRESS_MONITOR = new LoggingProgressMonitor();
+    static class LoggingProgressMonitor implements ProgressMonitor {
+            @Override
+            public void start(final int totalTasks) {
+                LOG.trace("start {}", totalTasks);
+            }
+
+            @Override
+            public void beginTask(final String title, final int totalWork) {
+                LOG.trace("beginTask {}, {}", title, totalWork);
+            }
+
+            @Override
+            public void update(final int completed) {
+                LOG.trace("update {}", completed);
+            }
+
+            @Override
+            public void endTask() {
+                LOG.trace("endTask");
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
     }
 }
