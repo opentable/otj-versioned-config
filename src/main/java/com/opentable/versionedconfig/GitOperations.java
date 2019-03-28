@@ -39,6 +39,7 @@ import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
+import org.eclipse.jgit.lib.ProgressMonitor;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
@@ -108,9 +109,14 @@ final class GitOperations {
         return upstreamRetry(remoteIndex -> {
             try {
                 final PullCommand pull = git.pull();
+                LOG.trace("Git pull completed");
                 configureCredentials(pull, config.getRemoteRepositories().get(remoteIndex));
+                LOG.trace("Configuration of credentials completed, setting remote {}", remoteIndex);
                 pull.setRemote("remote" + remoteIndex);
+                // Added but not deployed yet
+                pull.setProgressMonitor(LOGGING_PROGRESS_MONITOR);
                 PullResult result = pull.call();
+                LOG.trace("Got result {}", result);
                 return result.isSuccessful();
             } catch (GitAPIException e) {
                 throw new VersioningServiceException("could not pull", e);
@@ -132,8 +138,11 @@ final class GitOperations {
         LOG.trace("getCurrentHead");
         try {
             final ObjectId head = git.getRepository().resolve(Constants.HEAD);
+            LOG.trace("resolved {}", head);
             final Iterable<RevCommit> commits = git.log().add(head).setMaxCount(1).call();
+            LOG.trace("commits done");
             final Iterator<RevCommit> commIterator = commits.iterator();
+            LOG.trace("Got iterator");
             if (commIterator.hasNext()) {
                 final ObjectId id = commIterator.next().getId();
                 LOG.trace("getCurrentHead got id {}", id);
@@ -147,7 +156,9 @@ final class GitOperations {
     }
 
     Set<String> affectedFiles(ObjectId oldId, ObjectId newId) throws VersioningServiceException {
+        LOG.trace("innerAffectedFiles {}, {}", oldId, newId);
         final List<DiffEntry> diffEntries = affectedFilesBetweenCommits(oldId, newId);
+        LOG.trace("diff entries {}", diffEntries);
         final Set<String> items = diffEntries.stream()
                 .map(this::relevantDiffPath)
                 .collect(Collectors.toSet());
@@ -211,5 +222,33 @@ final class GitOperations {
             throw failure;
         }
         throw new IllegalStateException("no remotes to fetch");
+    }
+
+    private static final LoggingProgressMonitor LOGGING_PROGRESS_MONITOR = new LoggingProgressMonitor();
+    static class LoggingProgressMonitor implements ProgressMonitor {
+            @Override
+            public void start(final int totalTasks) {
+                LOG.trace("start {}", totalTasks);
+            }
+
+            @Override
+            public void beginTask(final String title, final int totalWork) {
+                LOG.trace("beginTask {}, {}", title, totalWork);
+            }
+
+            @Override
+            public void update(final int completed) {
+                LOG.trace("update {}", completed);
+            }
+
+            @Override
+            public void endTask() {
+                LOG.trace("endTask");
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
     }
 }
