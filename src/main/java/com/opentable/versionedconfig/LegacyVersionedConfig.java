@@ -24,7 +24,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class VersionedConfig {
+public class LegacyVersionedConfig {
 
     @Bean
     public GitProperties defaultVersioningServiceProperties(@Value("${config.repo.remote}") List<URI> remoteRepo,
