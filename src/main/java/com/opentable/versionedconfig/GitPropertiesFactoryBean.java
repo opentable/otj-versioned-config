@@ -75,18 +75,18 @@ public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
          *
          */
         // Convert to mutable uris
-        final List<VersionedUri> versionedUriList = versionedSpringProperties.getRemote().stream().map(VersionedUri::new).collect(Collectors.toList());
+        final List<MutableUri> mutableUriList = versionedSpringProperties.getRemote().stream().map(MutableUri::new).collect(Collectors.toList());
         // customize, eg CM, etc.
         if (versionedURICustomizer.isPresent()) {
             final List<VersionedURICustomizer> customizers = versionedURICustomizer.get();
-            for (int i = 0; i < versionedUriList.size(); i++) {
-                VersionedUri versionedUri = versionedUriList.get(i);
+            for (int i = 0; i < mutableUriList.size(); i++) {
+                MutableUri mutableUri = mutableUriList.get(i);
                 final Properties properties = PropertySourceUtil.getProperties(environment, prefix + ".secrets");
                 final String secretPath = properties.getProperty(String.valueOf(i));
-                customizers.forEach(t -> t.accept(secretPath, versionedUri));
+                customizers.forEach(t -> t.accept(secretPath, mutableUri));
             }
         }
-        List<URI> remoteRepos = versionedUriList.stream().map(VersionedUri::toUri).collect(Collectors.toList());
+        List<URI> remoteRepos = mutableUriList.stream().map(MutableUri::toUri).collect(Collectors.toList());
         return new GitProperties(remoteRepos, localPath, versionedSpringProperties.getBranch());
     }
 

@@ -17,14 +17,14 @@ import java.net.URI;
 
 import org.springframework.web.util.UriComponentsBuilder;
 
-public class VersionedUri {
+public class MutableUri {
     private final String host;
     private final int port;
     private final String path;
     private String username;
     private String password;
     private String scheme;
-    public VersionedUri(URI uri) {
+    public MutableUri(URI uri) {
         this.host = uri.getHost();
         this.port = uri.getPort();
         this.path = uri.getPath();
@@ -50,6 +50,30 @@ public class VersionedUri {
 
     public void setUsername(final String username) {
         this.username = username;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getScheme() {
+        return scheme;
+    }
+
+    public void setScheme(final String scheme) {
+        this.scheme = scheme;
     }
 
     public URI toUri() {

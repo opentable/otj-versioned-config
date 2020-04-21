@@ -14,5 +14,5 @@
 package com.opentable.versionedconfig;
 
 public interface VersionedURICustomizer {
-    void accept(String secretPath, VersionedUri versionedUri);
+    void accept(String secretPath, MutableUri versionedUri);
 }

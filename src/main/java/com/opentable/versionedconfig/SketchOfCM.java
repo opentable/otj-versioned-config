@@ -17,7 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class SketchOfCM implements  VersionedURICustomizer {
     @Override
-    public void accept(final String secretPath, final VersionedUri versionedUri) {
+    public void accept(final String secretPath, final MutableUri versionedUri) {
         if (StringUtils.isNotBlank(secretPath) && !versionedUri.hasPassword()) {
             // get a secret
             String username = null;
