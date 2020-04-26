@@ -33,18 +33,7 @@ import com.opentable.spring.PropertySourceUtil;
 import com.opentable.spring.SpecializedConfigFactory;
 
 /**
- * Tyical usage
- *
- * @Bean
- * GitPropertiesFactoryBean myFactory(
- *      return new GitPropertiesFactoryBean("a unique name here");
- * )
- *
- * @Bean
- *     public VersioningService defaultVersioningService(GitProperties config) {
- *         return VersioningService.forGitRepository(config);
- *     }
- *  Now inject VersioningService!
+  Core factory bean
  */
 public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
 
@@ -89,13 +78,6 @@ public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
         }
         final Path localPath = Paths.get(versionedSpringProperties.getLocal());
 
-        /*
-         * ot.versioned-config.(name).local
-         * ot.versioned-config.(name).branch
-         * ot.versioned-config.(name).remote
-         * ot.versioned-config.(name).secrets.(index)
-         *
-         */
         // Convert to mutable uris
         final List<MutableUri> mutableUriList = versionedSpringProperties.getRemote().stream().map(MutableUri::new).collect(Collectors.toList());
         // Standard customizers, none supplied by default, but it might be nice to support

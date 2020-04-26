@@ -93,7 +93,7 @@ public class MutableUri {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer("VersionedUri{");
+        final StringBuffer sb = new StringBuffer(255).append("VersionedUri{");
         sb.append("host='").append(host).append('\'');
         sb.append(", port=").append(port);
         sb.append(", path='").append(path).append('\'');
