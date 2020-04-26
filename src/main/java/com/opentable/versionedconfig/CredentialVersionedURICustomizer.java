@@ -13,17 +13,9 @@
  */
 package com.opentable.versionedconfig;
 
-import org.apache.commons.lang3.StringUtils;
-
-public class SketchOfCM implements CredentialVersionedURICustomizer {
-    @Override
-    public void accept(final String secretPath, final MutableUri versionedUri) {
-        if (StringUtils.isNotBlank(secretPath) && !versionedUri.hasPassword()) {
-            // get a secret
-            String username = null;
-            String password = null;
-            versionedUri.setPassword(password);
-            versionedUri.setUsername(username);
-        }
-    }
+/*
+Specifically for injecting information relevant for a Credentials Management plugin
+ */
+public interface CredentialVersionedURICustomizer {
+    void accept(String secretPath, MutableUri versionedUri);
 }

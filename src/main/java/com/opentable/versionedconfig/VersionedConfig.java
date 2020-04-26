@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @Deprecated
 /**
- * Use GitPropertiesFactory bean instead.
+ * Use GitPropertiesFactory bean instead, this is an annoying and limited api.
  */
 public class VersionedConfig {
 

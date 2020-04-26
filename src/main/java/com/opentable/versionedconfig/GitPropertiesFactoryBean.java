@@ -16,6 +16,7 @@ package com.opentable.versionedconfig;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -31,15 +32,31 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import com.opentable.spring.PropertySourceUtil;
 import com.opentable.spring.SpecializedConfigFactory;
 
+/**
+ * Tyical usage
+ *
+ * @Bean
+ * GitPropertiesFactoryBean myFactory(
+ *      return new GitPropertiesFactoryBean("a unique name here");
+ * )
+ *
+ * @Bean
+ *     public VersioningService defaultVersioningService(GitProperties config) {
+ *         return VersioningService.forGitRepository(config);
+ *     }
+ *  Now inject VersioningService!
+ */
 public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
 
     @Inject
-    private Optional<List<VersionedURICustomizer>> versionedURICustomizer = Optional.empty();
+    private Optional<List<CredentialVersionedURICustomizer>> credentialVersionedURICustomizers = Optional.empty();
+    private final List<VersionedURICustomizer> versionedURICustomizers = new ArrayList<>();
 
     @Inject
     private ConfigurableEnvironment environment;
 
     private final String name;
+
 
     public GitPropertiesFactoryBean(String name) {
         Objects.requireNonNull(name);
@@ -47,6 +64,11 @@ public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
             throw new IllegalArgumentException("name cannot contain a period");
         }
         this.name = name.trim();
+    }
+
+    public GitPropertiesFactoryBean withCustomizer(VersionedURICustomizer versionedURICustomizer) {
+        this.versionedURICustomizers.add(versionedURICustomizer);
+        return this;
     }
 
     @Override
@@ -76,16 +98,19 @@ public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
          */
         // Convert to mutable uris
         final List<MutableUri> mutableUriList = versionedSpringProperties.getRemote().stream().map(MutableUri::new).collect(Collectors.toList());
-        // customize, eg CM, etc.
-        if (versionedURICustomizer.isPresent()) {
-            final List<VersionedURICustomizer> customizers = versionedURICustomizer.get();
+        // Standard customizers, none supplied by default, but it might be nice to support
+        mutableUriList.forEach(uri -> this.versionedURICustomizers.forEach(t -> t.accept(uri)));
+
+        // Credential Customizers
+        credentialVersionedURICustomizers.ifPresent(credentialCustomizers -> {
             for (int i = 0; i < mutableUriList.size(); i++) {
                 MutableUri mutableUri = mutableUriList.get(i);
                 final Properties properties = PropertySourceUtil.getProperties(environment, prefix + ".secrets");
                 final String secretPath = properties.getProperty(String.valueOf(i));
-                customizers.forEach(t -> t.accept(secretPath, mutableUri));
+                credentialCustomizers.forEach(t -> t.accept(secretPath, mutableUri));
             }
-        }
+        });
+
         List<URI> remoteRepos = mutableUriList.stream().map(MutableUri::toUri).collect(Collectors.toList());
         return new GitProperties(remoteRepos, localPath, versionedSpringProperties.getBranch());
     }
@@ -108,11 +133,11 @@ public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
         this.environment = environment;
     }
 
-    public void setVersionedURICustomizer(final Optional<List<VersionedURICustomizer>> versionedURICustomizer) {
-        this.versionedURICustomizer = versionedURICustomizer;
+    public void setCredentialVersionedURICustomizers(final Optional<List<CredentialVersionedURICustomizer>> credentialVersionedURICustomizers) {
+        this.credentialVersionedURICustomizers = credentialVersionedURICustomizers;
     }
 
-    public Optional<List<VersionedURICustomizer>> getVersionedURICustomizer() {
-        return versionedURICustomizer;
+    public Optional<List<CredentialVersionedURICustomizer>> getCredentialVersionedURICustomizers() {
+        return credentialVersionedURICustomizers;
     }
 }

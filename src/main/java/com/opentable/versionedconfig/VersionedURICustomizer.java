@@ -13,6 +13,9 @@
  */
 package com.opentable.versionedconfig;
 
+/**
+ * Generic customizer, if useful.
+ */
 public interface VersionedURICustomizer {
-    void accept(String secretPath, MutableUri versionedUri);
+    void accept(MutableUri versionedUri);
 }
