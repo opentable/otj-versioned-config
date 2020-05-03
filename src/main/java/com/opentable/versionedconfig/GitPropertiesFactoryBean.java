@@ -17,6 +17,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,10 +38,11 @@ import com.opentable.spring.SpecializedConfigFactory;
   Core factory bean
  */
 public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
+    public static final String PROPERTY_SECRET_PATH = "secret";
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @Inject
-    private Optional<List<CredentialVersionedURICustomizer>> credentialVersionedURICustomizers = Optional.empty();
+    private Optional<List<VersionedURICustomizer>> credentialVersionedURICustomizers = Optional.empty();
     private final List<VersionedURICustomizer> versionedURICustomizers = new ArrayList<>();
 
     @Inject
@@ -108,17 +110,17 @@ public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
         final List<MutableUri> mutableUriList = new ArrayList<>();
         remoteUris.forEach((connectorName, uri) -> {
             final MutableUri mutableUri = new MutableUri(uri);
-            // Non credentials Management
-            this.versionedURICustomizers.forEach(t -> t.accept(mutableUri));
-            // CM
-            if (!mutableUri.hasPassword()) {
-                credentialVersionedURICustomizers.ifPresent(credentialCustomizers -> {
-                    final String secretPath = properties.getProperty("remote." + connectorName + ".secret");
-                    if (StringUtils.isNotBlank(secretPath)) {
-                        credentialCustomizers.forEach(t -> t.accept(secretPath, mutableUri));
-                    }
-                });
+            final String secretPath = properties.getProperty("remote." + connectorName + ".secret");
+            final Map<String, Object> map = new HashMap<>();
+            if (StringUtils.isNotBlank(secretPath)) {
+                map.put(PROPERTY_SECRET_PATH, secretPath);
             }
+            // Non credentials Management
+            this.versionedURICustomizers.forEach(t -> t.accept(map, mutableUri));
+            // CM
+                credentialVersionedURICustomizers.ifPresent(credentialCustomizers -> {
+                    credentialCustomizers.forEach(t -> t.accept(map, mutableUri));
+                });
             mutableUriList.add(mutableUri);
         });
 
@@ -145,11 +147,11 @@ public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    public void setCredentialVersionedURICustomizers(final Optional<List<CredentialVersionedURICustomizer>> credentialVersionedURICustomizers) {
+    public void setCredentialVersionedURICustomizers(final Optional<List<VersionedURICustomizer>> credentialVersionedURICustomizers) {
         this.credentialVersionedURICustomizers = credentialVersionedURICustomizers;
     }
 
-    public Optional<List<CredentialVersionedURICustomizer>> getCredentialVersionedURICustomizers() {
+    public Optional<List<VersionedURICustomizer>> getCredentialVersionedURICustomizers() {
         return credentialVersionedURICustomizers;
     }
 }

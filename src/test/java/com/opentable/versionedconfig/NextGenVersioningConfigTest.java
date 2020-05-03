@@ -41,22 +41,25 @@ public class NextGenVersioningConfigTest {
         factoryBean.setEnvironment(mockEnvironment);
         factoryBean.setCredentialVersionedURICustomizers(
                 Optional.of(Collections.singletonList((secretPath, versionedUri) -> {
+                    if (versionedUri.hasPassword() || !secretPath.containsKey(GitPropertiesFactoryBean.PROPERTY_SECRET_PATH)) {
+                        return;
+                    }
                     String host = versionedUri.getHost();
                     switch (host) {
                         case "firstRemote": {
-                            Assert.assertEquals("firstsecret", secretPath);
+                            Assert.assertEquals("firstsecret", secretPath.get("secret"));
                             break;
                         }
                         case "secondRemote": {
-                            Assert.assertEquals("secondsecret", secretPath);
+                            Assert.assertEquals("secondsecret", secretPath.get("secret"));
                             break;
                         }
                         default: {
                             throw new IllegalArgumentException("Nope");
                         }
                     }
-                    versionedUri.setPassword("password" + secretPath);
-                    versionedUri.setUsername("username" + secretPath);
+                    versionedUri.setPassword("password" + secretPath.get("secret"));
+                    versionedUri.setUsername("username" + secretPath.get("secret"));
 
                 })));
         GitProperties gitProperties = factoryBean.getObject();

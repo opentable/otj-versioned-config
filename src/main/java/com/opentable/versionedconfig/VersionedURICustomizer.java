@@ -13,9 +13,11 @@
  */
 package com.opentable.versionedconfig;
 
+import java.util.Map;
+
 /**
  * Generic customizer, if useful.
  */
 public interface VersionedURICustomizer {
-    void accept(MutableUri versionedUri);
+    void accept(Map<String, Object> properties, MutableUri versionedUri);
 }

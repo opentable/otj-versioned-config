@@ -13,11 +13,14 @@
  */
 package com.opentable.versionedconfig;
 
+import java.util.Map;
+
 import org.apache.commons.lang3.StringUtils;
 
-public class SketchOfCM implements CredentialVersionedURICustomizer {
+public class SketchOfCM implements VersionedURICustomizer {
     @Override
-    public void accept(final String secretPath, final MutableUri versionedUri) {
+    public void accept(final Map<String, Object> properties, final MutableUri versionedUri) {
+        final String secretPath = (String) properties.get(GitPropertiesFactoryBean.PROPERTY_SECRET_PATH);
         if (StringUtils.isNotBlank(secretPath) && !versionedUri.hasPassword()) {
             // get a secret
             String username = null;
