@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -35,7 +36,7 @@ import com.opentable.spring.PropertySourceUtil;
 import com.opentable.spring.SpecializedConfigFactory;
 
 /**
-  Core factory bean
+ * Core factory bean
  */
 public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
     public static final String PROPERTY_SECRET_PATH = "secret";
@@ -43,15 +44,17 @@ public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @Inject
     private Optional<List<VersionedURICustomizer>> credentialVersionedURICustomizers = Optional.empty();
+    // Similar but optional to add withCustomizer()
     private final List<VersionedURICustomizer> versionedURICustomizers = new ArrayList<>();
 
+    // Inject the environment. For testing, MockEnvironment may be used
     @Inject
     private ConfigurableEnvironment environment;
 
+    // Name of this configuration
     private final String name;
 
-
-    public GitPropertiesFactoryBean(String name) {
+    public GitPropertiesFactoryBean(final String name) {
         Objects.requireNonNull(name);
         if (name.contains(".")) {
             throw new IllegalArgumentException("name cannot contain a period");
@@ -59,13 +62,13 @@ public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
         this.name = name.trim();
     }
 
-    public GitPropertiesFactoryBean withCustomizer(VersionedURICustomizer versionedURICustomizer) {
+    public GitPropertiesFactoryBean withCustomizer(final VersionedURICustomizer versionedURICustomizer) {
         this.versionedURICustomizers.add(versionedURICustomizer);
         return this;
     }
 
     @Override
-    public GitProperties getObject() throws Exception {
+    public GitProperties getObject() {
 
         String prefix = "ot.versioned-config." + name;
         final SpecializedConfigFactory<VersionedSpringProperties> specializedConfigFactory = SpecializedConfigFactory.create(environment,
@@ -85,7 +88,7 @@ public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
         final List<String> allRemoteConnections = versionedSpringProperties.getRemotes().stream()
                 .map(String::trim).collect(Collectors.toList());
 
-        /**
+        /*
          * ot.versioned-config.$(name).remotes=(comma separated list of remotes, each named by a unique string
          * example = foo, bar
          * Then
@@ -95,37 +98,49 @@ public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
         // Everything under (name)
         final Properties properties = PropertySourceUtil.getProperties(environment, prefix);
 
-        // Take the .host.(name) attribute, convert to uris
+        // Take the ${name}.remote.${remoteName}.uri attribute, convert to uris
         // Key = original name attribute, value = uri
         final Map<String, URI> remoteUris = allRemoteConnections.stream()
-                .filter(Objects::nonNull).collect(Collectors.toMap(k -> k, v -> {
+                .filter(Objects::nonNull).collect(Collectors.toMap(Function.identity(), v -> {
+                    // Check for URI property and throw exception if not there or invalid uri format.
                     String uri = properties.getProperty("remote." + v + ".uri");
                     if (uri == null) {
-                        throw new IllegalArgumentException("The remote connector "+ v + " doesn't have an uri attribute");
+                        throw new IllegalArgumentException("The remote connector " + v + " doesn't have an uri attribute");
                     }
                     return URI.create(uri);
-
                 }));
 
         final List<MutableUri> mutableUriList = new ArrayList<>();
+        // Scan through the Map
         remoteUris.forEach((connectorName, uri) -> {
+            // Create a mutable version of the uri
             final MutableUri mutableUri = new MutableUri(uri);
+            // Check if there's a secret path, and add to the map instance if there.
             final String secretPath = properties.getProperty("remote." + connectorName + ".secret");
             final Map<String, Object> map = new HashMap<>();
             if (StringUtils.isNotBlank(secretPath)) {
                 map.put(PROPERTY_SECRET_PATH, secretPath);
             }
-            // Non credentials Management
-            this.versionedURICustomizers.forEach(t -> t.accept(map, mutableUri));
-            // CM
-                credentialVersionedURICustomizers.ifPresent(credentialCustomizers -> {
-                    credentialCustomizers.forEach(t -> t.accept(map, mutableUri));
-                });
+            customizeUri(mutableUri, map);
+            // Added mutated uris to the list
             mutableUriList.add(mutableUri);
         });
 
+        // Now convert the MutatableURI to final URI form.
         List<URI> remoteRepos = mutableUriList.stream().map(MutableUri::toUri).collect(Collectors.toList());
+
+        // ... and instantiate GitProperties!
         return new GitProperties(remoteRepos, localPath, versionedSpringProperties.getBranch());
+    }
+
+    private void customizeUri(final MutableUri mutableUri, final Map<String, Object> map) {
+        // Non credentials Management
+        this.versionedURICustomizers.forEach(
+                t -> t.accept(map, mutableUri));
+        // CM
+        credentialVersionedURICustomizers.ifPresent(
+                credentialCustomizers -> credentialCustomizers.forEach(
+                        t -> t.accept(map, mutableUri)));
     }
 
     @Override
