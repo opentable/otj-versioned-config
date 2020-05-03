@@ -47,8 +47,10 @@ ${config.repo.remote}") List<URI> remoteRepo,
 | ------------- | ------- | ------------- |
 | ot.versioned-config.${name}.local | where to check out repo locally (URI) | frontdoor-config |
 | ot.versioned-config.${name}.branch | The branch in the configuration repo to read | master |
-| ot.versioned-config.${name}.repo | comma delimited list of repo URIs. May include credentials if not using Credentials Managment | https://github.com/opentable/service-ot-frontdoor-config |
-| ot.versioned-config.${name}.secrets.(index) | if using cm this is the named of the shared secret manifest. index corresponds to the entry of repo (0, 1..) | my-github-secret |
+| ot.versioned-config.${name}.remotes | comma delimited list of remotes, each referenced by a unique name ${remote} | foo, bar
+| ot.versioned-config.${name}.remote.${remote).uri | URI for this specific remote listed in the remotes list . May include credentials if not using Credentials Managment | https://github.com/opentable/service-ot-frontdoor-config |
+| ot.versioned-config.${name}.remote.${remote}.secret | if using Credentials Management, this is the named of the shared secret manifest. | my-github-secret |
+
 
 Configuration Properties (using `VersionedConfig` deprecated)
 ------------------------

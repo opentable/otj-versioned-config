@@ -13,7 +13,6 @@
  */
 package com.opentable.versionedconfig;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +23,7 @@ public interface VersionedSpringProperties {
     default String getBranch() {
         return "master";
     }
-    default List<URI> getRemote() {
+    default List<String> getRemotes() {
         return new ArrayList<>();
     }
 }

@@ -17,7 +17,7 @@ import java.net.URI;
 
 import org.springframework.web.util.UriComponentsBuilder;
 
-public class MutableUri {
+public class MutableUri implements Comparable<MutableUri> {
     private final String host;
     private final int port;
     private final String path;
@@ -44,12 +44,14 @@ public class MutableUri {
         return password != null;
     }
 
-    public void setPassword(final String password) {
+    public MutableUri setPassword(final String password) {
         this.password = password;
+        return this;
     }
 
-    public void setUsername(final String username) {
+    public MutableUri setUsername(final String username) {
         this.username = username;
+        return this;
     }
 
     public int getPort() {
@@ -88,12 +90,15 @@ public class MutableUri {
     }
 
     private String toUserInfo() {
-        return username + ":" + password;
+        if (username != null) {
+            return password == null ? username : username + ": " + password;
+        }
+        return null;
     }
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer(255).append("VersionedUri{");
+        final StringBuilder sb = new StringBuilder(255).append("VersionedUri{");
         sb.append("host='").append(host).append('\'');
         sb.append(", port=").append(port);
         sb.append(", path='").append(path).append('\'');
@@ -101,5 +106,10 @@ public class MutableUri {
         sb.append(", password='").append(password).append('\'');
         sb.append('}');
         return sb.toString();
+    }
+
+    @Override
+    public int compareTo(final MutableUri o) {
+        return toUri().compareTo(o.toUri());
     }
 }

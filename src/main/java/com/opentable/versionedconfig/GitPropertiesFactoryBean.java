@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
@@ -37,6 +38,7 @@ import com.opentable.spring.SpecializedConfigFactory;
  */
 public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
 
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @Inject
     private Optional<List<CredentialVersionedURICustomizer>> credentialVersionedURICustomizers = Optional.empty();
     private final List<VersionedURICustomizer> versionedURICustomizers = new ArrayList<>();
@@ -67,30 +69,57 @@ public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
         final SpecializedConfigFactory<VersionedSpringProperties> specializedConfigFactory = SpecializedConfigFactory.create(environment,
                 VersionedSpringProperties.class, "ot.versioned-config.${name}");
         final VersionedSpringProperties versionedSpringProperties = specializedConfigFactory.getConfig(name);
-        if (versionedSpringProperties.getRemote().isEmpty()) {
-            throw new IllegalArgumentException("Must specify at least one uri");
+        if (versionedSpringProperties.getRemotes().isEmpty()) {
+            throw new IllegalArgumentException("Must specify at least one uri in remotes list");
         }
         if (StringUtils.isEmpty(versionedSpringProperties.getBranch())) {
             throw new IllegalArgumentException("Must specify branch");
         }
         if (StringUtils.isEmpty(versionedSpringProperties.getLocal())) {
-            throw new IllegalArgumentException("Must specify local");
+            throw new IllegalArgumentException("Must specify local attribute");
         }
         final Path localPath = Paths.get(versionedSpringProperties.getLocal());
 
-        // Convert to mutable uris
-        final List<MutableUri> mutableUriList = versionedSpringProperties.getRemote().stream().map(MutableUri::new).collect(Collectors.toList());
-        // Standard customizers, none supplied by default, but it might be nice to support
-        mutableUriList.forEach(uri -> this.versionedURICustomizers.forEach(t -> t.accept(uri)));
+        final List<String> allRemoteConnections = versionedSpringProperties.getRemotes().stream()
+                .map(String::trim).collect(Collectors.toList());
 
-        // Credential Customizers
-        credentialVersionedURICustomizers.ifPresent(credentialCustomizers -> {
-            for (int i = 0; i < mutableUriList.size(); i++) {
-                MutableUri mutableUri = mutableUriList.get(i);
-                final Properties properties = PropertySourceUtil.getProperties(environment, prefix + ".secrets");
-                final String secretPath = properties.getProperty(String.valueOf(i));
-                credentialCustomizers.forEach(t -> t.accept(secretPath, mutableUri));
+        /**
+         * ot.versioned-config.$(name).remotes=(comma separated list of remotes, each named by a unique string
+         * example = foo, bar
+         * Then
+         * ot.versioned.config.$(name).remote.foo.uri=the uri, which may contain auth info, but probably shouldn't
+         * ot.versioned.config.$(name).remote.foo.secret= name of CM shared secret
+         */
+        // Everything under (name)
+        final Properties properties = PropertySourceUtil.getProperties(environment, prefix);
+
+        // Take the .host.(name) attribute, convert to uris
+        // Key = original name attribute, value = uri
+        final Map<String, URI> remoteUris = allRemoteConnections.stream()
+                .filter(Objects::nonNull).collect(Collectors.toMap(k -> k, v -> {
+                    String uri = properties.getProperty("remote." + v + ".uri");
+                    if (uri == null) {
+                        throw new IllegalArgumentException("The remote connector "+ v + " doesn't have an uri attribute");
+                    }
+                    return URI.create(uri);
+
+                }));
+
+        final List<MutableUri> mutableUriList = new ArrayList<>();
+        remoteUris.forEach((connectorName, uri) -> {
+            final MutableUri mutableUri = new MutableUri(uri);
+            // Non credentials Management
+            this.versionedURICustomizers.forEach(t -> t.accept(mutableUri));
+            // CM
+            if (!mutableUri.hasPassword()) {
+                credentialVersionedURICustomizers.ifPresent(credentialCustomizers -> {
+                    final String secretPath = properties.getProperty("remote." + connectorName + ".secret");
+                    if (StringUtils.isNotBlank(secretPath)) {
+                        credentialCustomizers.forEach(t -> t.accept(secretPath, mutableUri));
+                    }
+                });
             }
+            mutableUriList.add(mutableUri);
         });
 
         List<URI> remoteRepos = mutableUriList.stream().map(MutableUri::toUri).collect(Collectors.toList());
@@ -115,6 +144,7 @@ public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
         this.environment = environment;
     }
 
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     public void setCredentialVersionedURICustomizers(final Optional<List<CredentialVersionedURICustomizer>> credentialVersionedURICustomizers) {
         this.credentialVersionedURICustomizers = credentialVersionedURICustomizers;
     }
