@@ -39,16 +39,14 @@ up the local checkout.  (This is done for you if you use the Spring integration.
 
 Configuration Properties (using GitPropertiesFactoryBean)
 ---------
-${config.repo.remote}") List<URI> remoteRepo,
-                                                            @Value("${config.repo.local:#{null}}") Path localPath,
-                                                            @Value("${config.repo.branch:master}"
+
 ------------------------
 | Property name | Purpose | Example value |
 | ------------- | ------- | ------------- |
-| ot.versioned-config.${name}.local | where to check out repo locally (URI) | frontdoor-config |
-| ot.versioned-config.${name}.branch | The branch in the configuration repo to read | master |
-| ot.versioned-config.${name}.remotes | comma delimited list of remotes, each referenced by a unique name ${remote} | foo, bar
-| ot.versioned-config.${name}.remote.${remote).uri | URI for this specific remote listed in the remotes list . May include credentials if not using Credentials Managment | https://github.com/opentable/service-ot-frontdoor-config |
+| ot.versioned-config.${name}.local | REQUIRED.where to check out repo locally (URI) | frontdoor-config |
+| ot.versioned-config.${name}.branch | REQUIRED.The branch in the configuration repo to read | master |
+| ot.versioned-config.${name}.remotes | REQUIRED. comma delimited list of remotes, each referenced by a unique name ${remote} | foo, bar
+| ot.versioned-config.${name}.remote.${remote).uri | REQUIRED. URI for this specific remote listed in the remotes list . May include credentials if not using Credentials Managment | https://github.com/opentable/service-ot-frontdoor-config |
 | ot.versioned-config.${name}.remote.${remote}.secret | if using Credentials Management, this is the named of the shared secret manifest. | my-github-secret |
 
 
