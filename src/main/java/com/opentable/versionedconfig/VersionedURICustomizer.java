@@ -16,8 +16,13 @@ package com.opentable.versionedconfig;
 import java.util.Map;
 
 /**
- * Generic customizer, if useful.
+ * Generic customizer called by {@link GitPropertiesFactoryBean}
  */
 public interface VersionedURICustomizer {
-    void accept(Map<String, Object> properties, MutableUri versionedUri);
+    /**
+     * Customize the MutableURI provided
+     * @param properties Properties map. {@link GitPropertiesFactoryBean}
+     * @param mutableUri the mutable uri.
+     */
+    void accept(Map<String, Object> properties, MutableUri mutableUri);
 }
