@@ -70,12 +70,13 @@ public class NextGenVersioningConfigTest {
         List<MutableUri> mutableUriList = remoteURIs.stream().map(MutableUri::new).
                 sorted(
         ).collect(Collectors.toList());
-        MutableUri f = mutableUriList.get(0);
-        Assert.assertEquals(f.getHost(), "firstRemote");
-        Assert.assertEquals(f.getScheme(), "http");
-        Assert.assertTrue(f.hasPassword());
-        Assert.assertEquals("usernamefirstsecret", f.getUsername());
-        Assert.assertEquals("passwordfirstsecret", f.getPassword());
+
+        MutableUri first = mutableUriList.get(0);
+        Assert.assertEquals(first.getHost(), "firstRemote");
+        Assert.assertEquals(first.getScheme(), "http");
+        Assert.assertTrue(first.hasPassword());
+        Assert.assertEquals("usernamefirstsecret", first.getUsername());
+        Assert.assertEquals("passwordfirstsecret", first.getPassword());
 
         MutableUri third = mutableUriList.get(1);
         Assert.assertEquals(third.getHost(), "thirdRemote");
@@ -89,16 +90,11 @@ public class NextGenVersioningConfigTest {
         Assert.assertEquals("superuser", fourth.getUsername());
         Assert.assertEquals("superpassword", fourth.getPassword());
 
-        MutableUri s = mutableUriList.get(3);
-        Assert.assertEquals(s.getHost(), "secondRemote");
-        Assert.assertEquals(s.getScheme(), "https");
-        Assert.assertTrue(s.hasPassword());
-        Assert.assertEquals("usernamesecondsecret", s.getUsername());
-        Assert.assertEquals("passwordsecondsecret", s.getPassword());
-
-
-
-
-
+        MutableUri second = mutableUriList.get(3);
+        Assert.assertEquals(second.getHost(), "secondRemote");
+        Assert.assertEquals(second.getScheme(), "https");
+        Assert.assertTrue(second.hasPassword());
+        Assert.assertEquals("usernamesecondsecret", second.getUsername());
+        Assert.assertEquals("passwordsecondsecret", second.getPassword());
     }
 }

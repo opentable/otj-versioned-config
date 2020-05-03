@@ -75,18 +75,21 @@ public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
                 VersionedSpringProperties.class, "ot.versioned-config.${name}");
         final VersionedSpringProperties versionedSpringProperties = specializedConfigFactory.getConfig(name);
         if (versionedSpringProperties.getRemotes().isEmpty()) {
-            throw new IllegalArgumentException("Must specify at least one uri in remotes list");
+            throw new IllegalArgumentException("Must specify at least one entry in remotes attribute");
         }
         if (StringUtils.isEmpty(versionedSpringProperties.getBranch())) {
-            throw new IllegalArgumentException("Must specify branch");
+            throw new IllegalArgumentException("Must specify branch attribute");
         }
         if (StringUtils.isEmpty(versionedSpringProperties.getLocal())) {
             throw new IllegalArgumentException("Must specify local attribute");
         }
         final Path localPath = Paths.get(versionedSpringProperties.getLocal());
 
-        final List<String> allRemoteConnections = versionedSpringProperties.getRemotes().stream()
-                .map(String::trim).collect(Collectors.toList());
+        final List<String> allRemoteConnections = versionedSpringProperties.getRemotes()
+                .stream()
+                .map(String::trim)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toList());
 
         /*
          * ot.versioned-config.$(name).remotes=(comma separated list of remotes, each named by a unique string
@@ -101,7 +104,7 @@ public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
         // Take the ${name}.remote.${remoteName}.uri attribute, convert to uris
         // Key = original name attribute, value = uri
         final Map<String, URI> remoteUris = allRemoteConnections.stream()
-                .filter(Objects::nonNull).collect(Collectors.toMap(Function.identity(), v -> {
+                .collect(Collectors.toMap(Function.identity(), v -> {
                     // Check for URI property and throw exception if not there or invalid uri format.
                     String uri = properties.getProperty("remote." + v + ".uri");
                     if (uri == null) {
