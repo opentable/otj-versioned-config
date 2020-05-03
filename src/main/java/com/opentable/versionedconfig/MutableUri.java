@@ -14,6 +14,7 @@
 package com.opentable.versionedconfig;
 
 import java.net.URI;
+import java.util.Objects;
 
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -106,6 +107,28 @@ public class MutableUri implements Comparable<MutableUri> {
         sb.append(", password='").append(password).append('\'');
         sb.append('}');
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final MutableUri that = (MutableUri) o;
+        return port == that.port &&
+                Objects.equals(host, that.host) &&
+                Objects.equals(path, that.path) &&
+                Objects.equals(username, that.username) &&
+                Objects.equals(password, that.password) &&
+                Objects.equals(scheme, that.scheme);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(host, port, path, username, password, scheme);
     }
 
     @Override
