@@ -32,8 +32,8 @@ public class MutableUri implements Comparable<MutableUri> {
         this.scheme = uri.getScheme();
         if (uri.getUserInfo() != null) {
             String[] userInfo = uri.getUserInfo().split(":");
-            username = userInfo[0].trim();
-            password = userInfo[1].trim();
+            username = userInfo.length > 0 ? userInfo[0].trim() : null;
+            password = userInfo.length > 1 ? userInfo[1].trim() : null;
         }
     }
 
