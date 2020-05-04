@@ -23,7 +23,7 @@ public VersioningService defaultVersioningService(GitProperties config) {
   Now inject VersioningService!
 
 The old, deprecated methodology of importing `VersionedConfig` is still
-supported but strongly recommended against.
+supported for now but strongly recommended against. We will eventually remove this.
 
 How it works
 ------------
@@ -49,9 +49,26 @@ Configuration Properties (using GitPropertiesFactoryBean)
 | ot.versioned-config.${name}.remote.${remote).uri | REQUIRED. URI for this specific remote listed in the remotes list . May include credentials if not using Credentials Managment | https://github.com/opentable/service-ot-frontdoor-config |
 | ot.versioned-config.${name}.remote.${remote}.secret | if using Credentials Management, this is the named of the shared secret manifest. | my-github-secret |
 
+_Example_
+
+For a bean where I pass "myclient" to the `GitPropertiesFactoryBean`,
+and have two remotes, named github and mirror.
+
+
+```
+ot.versioned-config.myclient.local=$MESOS_SANDBOX
+ot.versioned-config.myclient.branch=master
+ot-versioned-config.myclient.remotes=mirror,github
+ot-versioned-config.myclient.mirror.uri=https://docker-mirror-ci-sf.otenv.com
+ot-versioned-config.myclient.mirror.secret=shared-mirror-secret
+ot-versioned-config.myclient.github.uri=https://github.com/opentable/service-ot-frontdoor-config.git
+ot-versioned-config.myclient.github.secret=shared-frontdoor-github-secret
+```
+
+
 
 Configuration Properties (using `VersionedConfig` deprecated)
-------------------------
+----
 | Property name | Purpose | Example value |
 | ------------- | ------- | ------------- |
 | config.repo.remote |comma delimited list of repo URIs. May include credentials if not using Credentials Managment | https://github.com/opentable/service-ot-frontdoor-config |
