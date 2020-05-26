@@ -41,7 +41,7 @@ public class MutableUri implements Comparable<MutableUri> {
         return host;
     }
 
-    boolean hasPassword() {
+    public boolean hasPassword() {
         return password != null;
     }
 

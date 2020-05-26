@@ -47,6 +47,12 @@
   </properties>
 
   <dependencies>
+    <!-- Only required if you pull in the files under credentials package -->
+    <dependency>
+      <groupId>com.opentable.credentials</groupId>
+      <artifactId>otj-credentials-client</artifactId>
+      <optional>true</optional>
+    </dependency>
     <dependency>
       <groupId>com.opentable.components</groupId>
       <artifactId>otj-core</artifactId>

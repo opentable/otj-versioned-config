@@ -25,6 +25,10 @@ public VersioningService defaultVersioningService(GitProperties config) {
 The old, deprecated methodology of importing `VersionedConfig` is still
 supported for now but strongly recommended against. We will eventually remove this.
 
+Credentials Management
+-----
+* See `VersionedConfigCredentialsProvider` and the javadoc for easy integration.
+
 How it works
 ------------
 The VersioningService maintains a local clone of the remote Git repository.
@@ -69,6 +73,7 @@ ot-versioned-config.myclient.github.secret=shared-frontdoor-github-secret
 
 Configuration Properties (using `VersionedConfig` deprecated)
 ----
+
 | Property name | Purpose | Example value |
 | ------------- | ------- | ------------- |
 | config.repo.remote |comma delimited list of repo URIs. May include credentials if not using Credentials Managment | https://github.com/opentable/service-ot-frontdoor-config |
