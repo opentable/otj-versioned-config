@@ -92,7 +92,7 @@ public class MutableUri implements Comparable<MutableUri> {
 
     private String toUserInfo() {
         if (username != null) {
-            return password == null ? username : username + ": " + password;
+            return password == null ? username : username + ":" + password;
         }
         return null;
     }
