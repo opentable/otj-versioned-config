@@ -206,7 +206,7 @@ final class GitOperations {
             try {
                 final T result = action.apply(idx);
                 if (failure != null) {
-                    LOG.info("remote {} '{}' succeeded", idx, remote);
+                    LOG.trace("remote {} '{}' succeeded", idx, remote);
                 }
                 return result;
             } catch (RuntimeException e) {
@@ -225,6 +225,13 @@ final class GitOperations {
     }
 
     private static final LoggingProgressMonitor LOGGING_PROGRESS_MONITOR = new LoggingProgressMonitor();
+
+    public void close() {
+        if (this.git != null && this.git.getRepository() != null) {
+            this.git.getRepository().close();
+        }
+    }
+
     static class LoggingProgressMonitor implements ProgressMonitor {
             @Override
             public void start(final int totalTasks) {
