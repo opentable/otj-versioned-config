@@ -20,14 +20,21 @@ public VersioningService defaultVersioningService(GitProperties config) {
     return VersioningService.forGitRepository(config);
  }
 ```
-  Now inject VersioningService!
+  Now `@Inject VersioningService`!
 
 The old, deprecated methodology of importing `VersionedConfig` is still
 supported for now but strongly recommended against. We will eventually remove this.
 
 Credentials Management
 -----
-* See `VersionedConfigCredentialsProvider` and the javadoc for easy integration.
+* make sure you configure  `ot.versioned-config.${name}.remote.${remote}.secret` (see table below)
+* Add the following:
+```
+@Bean
+public VersionedConfigCredentialsProvider versionedConfigCredentialsProvider(CredentialsClient credentialsClient) {
+    return new VersionedConfigCredentialsProvider(credentialsClient);
+}
+```
 
 How it works
 ------------
@@ -68,8 +75,6 @@ ot-versioned-config.myclient.mirror.secret=shared-mirror-secret
 ot-versioned-config.myclient.github.uri=https://github.com/opentable/service-ot-frontdoor-config.git
 ot-versioned-config.myclient.github.secret=shared-frontdoor-github-secret
 ```
-
-
 
 Configuration Properties (using `VersionedConfig` deprecated)
 ----

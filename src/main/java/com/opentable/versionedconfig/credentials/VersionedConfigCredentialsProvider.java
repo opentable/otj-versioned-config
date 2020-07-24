@@ -28,17 +28,15 @@ public class VersionedConfigCredentialsProvider implements VersionedURICustomize
     private static final Logger LOG = LoggerFactory.getLogger( VersionedConfigCredentialsProvider.class );
 
     private final CredentialsClient credentialsClient;
-    private final String sharedManifestName;
 
     // Defined in an @Bean as needed.
     // eg
     // @Bean
     // public VersionedConfigCredentialsProvider(CredentialsClient client) {
-    //      return new VersionedConfigCredentialsProvider(client, "mysecretnane");
+    //      return new VersionedConfigCredentialsProvider(client);
     // }
-    public VersionedConfigCredentialsProvider(CredentialsClient client, String sharedManifestName) {
+    public VersionedConfigCredentialsProvider(CredentialsClient client) {
         this.credentialsClient = client;
-        this.sharedManifestName = sharedManifestName;
     }
 
     @Override
@@ -46,12 +44,14 @@ public class VersionedConfigCredentialsProvider implements VersionedURICustomize
         final String secretPath = (String) properties.get(GitPropertiesFactoryBean.PROPERTY_SECRET_PATH);
         if (StringUtils.isNotBlank(secretPath) && !versionedUri.hasPassword()) {
             // get a secret
-            final VersionedConfigSecret secret = credentialsClient.getSharedSecret(sharedManifestName, VersionedConfigSecret.class).get();
+            final VersionedConfigSecret secret = credentialsClient.getSharedSecret(secretPath, VersionedConfigSecret.class).get();
             final String username = secret.getUsername();
             final String password = secret.getPassword();
             versionedUri.setPassword(password);
             versionedUri.setUsername(username);
             LOG.debug("Successfully injected the VersionedConfigSecret");
+        } else {
+            LOG.trace("Skipped injection of secrets {}/{}", secretPath, versionedUri.hasPassword());
         }
     }
 }
