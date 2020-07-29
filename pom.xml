@@ -19,7 +19,7 @@
   <parent>
     <groupId>com.opentable</groupId>
     <artifactId>otj-parent-spring</artifactId>
-    <version>252</version>
+    <version>254</version>
   </parent>
 
   <scm>
@@ -39,8 +39,6 @@
   <properties>
     <!-- TODO: Submit a PR managing otj-versioned config and these updates -->
     <dep.jgit.version>5.8.1.202007141445-r</dep.jgit.version>
-    <dep.bouncycastle-bcpkix.version>1.66</dep.bouncycastle-bcpkix.version>
-    <dep.bouncycastle-bcxprov.version>1.66</dep.bouncycastle-bcxprov.version>
     <basepom.oss.skip-scala-doc>true</basepom.oss.skip-scala-doc>
     <basepom.check.skip-javadoc>false</basepom.check.skip-javadoc>
     <basepom.check.fail-javadoc>false</basepom.check.fail-javadoc>
