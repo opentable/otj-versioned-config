@@ -142,7 +142,7 @@ class GitService implements VersioningService {
                     .map(Paths::get)
                     .collect(Collectors.toSet());
         }
-        LOG.info("Update from {} to {} affected paths = {}", currentHash, newHash, affectedPaths);
+        LOG.debug("Update from {} to {} affected paths = {}", currentHash, newHash, affectedPaths);
         return affectedPaths;
     }
 
@@ -174,6 +174,7 @@ class GitService implements VersioningService {
     @Override
     @PreDestroy
     public void close() throws IOException {
+        gitOperations.close();
         if (config.getLocalRepository() != null) {
             return;
         }
