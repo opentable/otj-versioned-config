@@ -73,7 +73,7 @@ public class GitPropertiesFactoryBean implements FactoryBean<GitProperties> {
         String prefix = "ot.versioned-config." + name;
         final SpecializedConfigFactory<VersionedSpringProperties> specializedConfigFactory = SpecializedConfigFactory.create(environment,
                 VersionedSpringProperties.class, "ot.versioned-config.${name}");
-        final VersionedSpringProperties versionedSpringProperties = specializedConfigFactory.getConfig(name);
+        final VersionedSpringProperties versionedSpringProperties = specializedConfigFactory.getConfig(name, strings -> {});
         if (versionedSpringProperties.getRemotes().isEmpty()) {
             throw new IllegalArgumentException("Must specify at least one entry in remotes attribute");
         }
