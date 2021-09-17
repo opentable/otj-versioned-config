@@ -12,9 +12,9 @@ Typical usage:
 
 ```
 @Bean
-public GitPropertiesFactoryBean myFactory(
+public GitPropertiesFactoryBean myFactory() {
     return new GitPropertiesFactoryBean("a unique name here");
-)
+}
 @Bean
 public VersioningService defaultVersioningService(GitProperties config) {
     return VersioningService.forGitRepository(config);
@@ -69,11 +69,11 @@ and have two remotes, named github and mirror.
 ```
 ot.versioned-config.myclient.local=$MESOS_SANDBOX
 ot.versioned-config.myclient.branch=master
-ot-versioned-config.myclient.remotes=mirror,github
-ot-versioned-config.myclient.mirror.uri=https://docker-mirror-ci-sf.otenv.com
-ot-versioned-config.myclient.mirror.secret=shared-mirror-secret
-ot-versioned-config.myclient.github.uri=https://github.com/opentable/service-ot-frontdoor-config.git
-ot-versioned-config.myclient.github.secret=shared-frontdoor-github-secret
+ot.versioned-config.myclient.remotes=mirror,github
+ot.versioned-config.myclient.remote.rmirror.uri=https://docker-mirror-ci-sf.otenv.com
+ot.versioned-config.myclient.remote.mirror.secret=shared-mirror-secret
+ot.versioned-config.myclient.remote.github.uri=https://github.com/opentable/service-ot-frontdoor-config.git
+ot.versioned-config.myclient.remote.github.secret=shared-frontdoor-github-secret
 ```
 
 Configuration Properties (using `VersionedConfig` deprecated)
