@@ -6,14 +6,34 @@ Component for reading and polling for configuration from git.
 Usage
 -----
 
-For Spring projects, in your configuration classes just import VersionedConfig.  This will automatically determine the
-Git repository to watch via application properties, and provide a `VersioningService` that tracks changes.
+Typical usage:
 
-You can also configure it manually if you prefer:
-```java
-VersioningService config = VersioningService.forGitRepo(
-    new VersioningServiceProperties()
-        .setRemoteConfigRepository("http://git.somewhere.com/..."));
+* Configure the properties (see below)
+
+```
+@Bean
+public GitPropertiesFactoryBean myFactory() {
+    return new GitPropertiesFactoryBean("a unique name here");
+}
+@Bean
+public VersioningService defaultVersioningService(GitProperties config) {
+    return VersioningService.forGitRepository(config);
+ }
+```
+  Now `@Inject VersioningService`!
+
+The old, deprecated methodology of importing `VersionedConfig` is still
+supported for now but strongly recommended against. We will eventually remove this.
+
+Credentials Management
+-----
+* make sure you configure  `ot.versioned-config.${name}.remote.${remote}.secret` (see table below)
+* Add the following:
+```
+@Bean
+public VersionedConfigCredentialsProvider versionedConfigCredentialsProvider(CredentialsClient credentialsClient) {
+    return new VersionedConfigCredentialsProvider(credentialsClient);
+}
 ```
 
 How it works
@@ -28,17 +48,39 @@ state of the *local* repository.
 Remember to `close()` your versioning service when you are done with it to clean
 up the local checkout.  (This is done for you if you use the Spring integration.)
 
-Configuration Properties
+Configuration Properties (using GitPropertiesFactoryBean)
+---------
+
 ------------------------
 | Property name | Purpose | Example value |
 | ------------- | ------- | ------------- |
-| config.repo.remote | github repo URI | https://github.com/opentable/service-ot-frontdoor-config |
-| config.repo.oauth-token | github oauth token |
-| config.repo.username | username | *your username* |
-| config.repo.password | password | *your password* |
+| ot.versioned-config.${name}.local | REQUIRED.where to check out repo locally (URI) | frontdoor-config |
+| ot.versioned-config.${name}.branch | REQUIRED.The branch in the configuration repo to read | master |
+| ot.versioned-config.${name}.remotes | REQUIRED. comma delimited list of remotes, each referenced by a unique name ${remote} | foo, bar
+| ot.versioned-config.${name}.remote.${remote).uri | REQUIRED. URI for this specific remote listed in the remotes list . May include credentials if not using Credentials Managment | https://github.com/opentable/service-ot-frontdoor-config |
+| ot.versioned-config.${name}.remote.${remote}.secret | if using Credentials Management, this is the named of the shared secret manifest. | my-github-secret |
+
+_Example_
+
+For a bean where I pass "myclient" to the `GitPropertiesFactoryBean`,
+and have two remotes, named github and mirror.
+
+
+```
+ot.versioned-config.myclient.local=$MESOS_SANDBOX
+ot.versioned-config.myclient.branch=master
+ot.versioned-config.myclient.remotes=mirror,github
+ot.versioned-config.myclient.remote.rmirror.uri=https://docker-mirror-ci-sf.otenv.com
+ot.versioned-config.myclient.remote.mirror.secret=shared-mirror-secret
+ot.versioned-config.myclient.remote.github.uri=https://github.com/opentable/service-ot-frontdoor-config.git
+ot.versioned-config.myclient.remote.github.secret=shared-frontdoor-github-secret
+```
+
+Configuration Properties (using `VersionedConfig` deprecated)
+----
+
+| Property name | Purpose | Example value |
+| ------------- | ------- | ------------- |
+| config.repo.remote |comma delimited list of repo URIs. May include credentials if not using Credentials Managment | https://github.com/opentable/service-ot-frontdoor-config |
 | config.repo.local | where to check out repo locally (URI) | frontdoor-config |
 | config.repo.branch | The branch in the configuration repo to read | master |
-
-**Note**: `config.repo.oauth-token` and `config.repo.username/password` are mutually exclusive.
-You should use one or the other, but not both. (Setting an `oauth-token` automatically sets your
-password to `"x-oauth-basic"`.)

@@ -19,7 +19,7 @@
   <parent>
     <groupId>com.opentable</groupId>
     <artifactId>otj-parent-spring</artifactId>
-    <version>184</version>
+    <version>302</version>
   </parent>
 
   <scm>
@@ -32,23 +32,36 @@
   <groupId>com.opentable.components</groupId>
   <artifactId>otj-versioned-config</artifactId>
   <name>otj-versioned-config</name>
-  <version>4.0.5-SNAPSHOT</version>
+  <version>4.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <description>component for polling configuration information from git.</description>
 
   <properties>
-    <dep.jgit.version>5.3.0.201903130848-r</dep.jgit.version>
+    <!-- TODO: Submit a PR managing otj-versioned config and these updates -->
+<!--    <dep.jgit.version>5.11.0.202103091610-r</dep.jgit.version>-->
+    <dep.jgit.version>5.13.0.202109080827-r</dep.jgit.version>
+
+
     <basepom.oss.skip-scala-doc>true</basepom.oss.skip-scala-doc>
     <basepom.check.skip-javadoc>false</basepom.check.skip-javadoc>
     <basepom.check.fail-javadoc>false</basepom.check.fail-javadoc>
   </properties>
 
   <dependencies>
+    <!-- Only required if you pull in the files under credentials package -->
+    <dependency>
+      <groupId>com.opentable.credentials</groupId>
+      <artifactId>otj-credentials-client</artifactId>
+      <optional>true</optional>
+    </dependency>
     <dependency>
       <groupId>com.opentable.components</groupId>
       <artifactId>otj-core</artifactId>
     </dependency>
-
+    <dependency>
+      <groupId>com.opentable.components</groupId>
+      <artifactId>otj-spring</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.eclipse.jgit</groupId>
       <artifactId>org.eclipse.jgit</artifactId>
@@ -67,13 +80,19 @@
 
     <dependency>
       <groupId>org.springframework</groupId>
+      <artifactId>spring-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
       <artifactId>spring-beans</artifactId>
-      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
-      <optional>true</optional>
     </dependency>
 
     <dependency>
@@ -104,11 +123,19 @@
     </dependency>
 
     <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <optional>true</optional>
     </dependency>
-
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>

@@ -23,7 +23,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Use GitPropertiesFactory bean instead, this is an annoying and limited api.
+ * It will be removed eventually.
+ */
 @Configuration
+@Deprecated
 public class VersionedConfig {
 
     @Bean
