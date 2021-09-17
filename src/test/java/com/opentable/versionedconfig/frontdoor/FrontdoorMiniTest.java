@@ -16,6 +16,7 @@ package com.opentable.versionedconfig.frontdoor;
 import javax.inject.Inject;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
@@ -33,7 +34,7 @@ import com.opentable.versionedconfig.VersioningService;
         "ot.versioned-config.mike.local=/tmp/gittest/",
         "ot.versioned-config.mike.branch=master",
         "ot.versioned-config.mike.remotes=myremote",
-        "ot.versioned-config.mike.remote.myremote.uri=https://f5b27a22883122102a54dc6e8551b93973f47f21:x-oauth-basic@github.com/opentable/service-ot-frontdoor-config"
+        "ot.versioned-config.mike.remote.myremote.uri=https://PUTTOKENHERE:x-oauth-basic@github.com/opentable/service-ot-frontdoor-config"
 })
 public class FrontdoorMiniTest {
     @Inject
@@ -42,6 +43,7 @@ public class FrontdoorMiniTest {
     ConfigUpdateService configUpdateService;
 
     @Test
+    @Ignore
     public void testFrontdoor() {
        configUpdateService.tryUpdate();
         Assert.assertTrue(configUpdateService.getLatestValidRevision().isPresent());
