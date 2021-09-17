@@ -19,7 +19,7 @@
   <parent>
     <groupId>com.opentable</groupId>
     <artifactId>otj-parent-spring</artifactId>
-    <version>275</version>
+    <version>302</version>
   </parent>
 
   <scm>
@@ -38,8 +38,8 @@
 
   <properties>
     <!-- TODO: Submit a PR managing otj-versioned config and these updates -->
-    <dep.otj-spring.version>5.2.1</dep.otj-spring.version>
-    <dep.jgit.version>5.11.0.202103091610-r</dep.jgit.version>
+<!--    <dep.jgit.version>5.11.0.202103091610-r</dep.jgit.version>-->
+    <dep.jgit.version>5.13.0.202109080827-r</dep.jgit.version>
 
 
     <basepom.oss.skip-scala-doc>true</basepom.oss.skip-scala-doc>
