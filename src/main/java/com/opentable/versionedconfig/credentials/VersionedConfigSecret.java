@@ -25,6 +25,14 @@ public class VersionedConfigSecret {
         return username;
     }
 
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder(255).append("VersionedConfigSecret{");
