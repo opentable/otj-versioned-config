@@ -31,7 +31,7 @@ public class GitProperties {
     private final Path localRepository;
     private final String branch;
 
-    private final int timeoutInSec;
+    private final int duration;
 
     public GitProperties(URI remoteRepository,
                          @Nullable Path localRepository,
@@ -45,22 +45,22 @@ public class GitProperties {
         this.remoteRepositories = ImmutableList.copyOf(remoteRepositories);
         this.localRepository = localRepository;
         this.branch = branch;
-        this.timeoutInSec = -1;
+        this.duration = -1;
     }
 
     /*
      * Isolate new timeout feature into own constructor for now.
      * Dependent services will override bean defaultVersioningServiceProperties
-     * to initialize this constructor and set timeout as needed.
+     * to initialize this constructor and set duration (timeout) as needed.
      */
     public GitProperties(List<URI> remoteRepositories,
                          @Nullable Path localRepository,
                          String branch,
-                         int timeoutInSec){
+                         int duration){
         this.remoteRepositories = ImmutableList.copyOf(remoteRepositories);
         this.localRepository = localRepository;
         this.branch = branch;
-        this.timeoutInSec = timeoutInSec;
+        this.duration = duration;
     }
 
     public List<URI> getRemoteRepositories() {
@@ -75,7 +75,7 @@ public class GitProperties {
         return branch;
     }
 
-    public int getTimeoutInSec() { return timeoutInSec; }
+    public int getDuration() { return duration; }
 
     @Override
     public boolean equals(Object o) {
@@ -90,12 +90,12 @@ public class GitProperties {
         return Objects.equal(remoteRepositories, that.remoteRepositories) &&
                 Objects.equal(localRepository, that.localRepository) &&
                 Objects.equal(branch, that.branch) &&
-                Objects.equal(timeoutInSec, that.timeoutInSec);
+                Objects.equal(duration, that.duration);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(remoteRepositories, localRepository, branch, timeoutInSec);
+        return Objects.hashCode(remoteRepositories, localRepository, branch, duration);
     }
 
     @Override
@@ -104,7 +104,7 @@ public class GitProperties {
                 "remoteRepositories=" + remoteRepositories +
                 ", localRepository=" + localRepository +
                 ", branch='" + branch + '\'' +
-                ", timeoutInSec=" + timeoutInSec +
+                ", duration=" + duration +
                 '}';
     }
 }

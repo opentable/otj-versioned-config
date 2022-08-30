@@ -79,12 +79,18 @@ final class GitOperations {
             LOG.info("cloning {} (branch {}) to {}", remoteIndex, cloneBranch, checkoutDir);
 
             try {
+                int duration = config.getDuration();
                 final URI uri = remotes.get(remoteIndex);
                 CloneCommand clone = Git.cloneRepository()
                         .setBare(false)
                         .setBranch(cloneBranch)
                         .setDirectory(checkoutDir.toFile())
                         .setURI(uri.toString());
+
+                if (duration != -1){
+                    clone.setTimeout(duration);
+                }
+                
                 configureCredentials(clone, uri);
                 return clone.call();
             } catch (GitAPIException ioe) {
@@ -108,7 +114,7 @@ final class GitOperations {
         LOG.trace("pulling latest");
         return upstreamRetry(remoteIndex -> {
             try {
-                int timeout = config.getTimeoutInSec();
+                int duration = config.getDuration();
                 final PullCommand pull = git.pull();
                 LOG.trace("Git pull completed");
                 configureCredentials(pull, config.getRemoteRepositories().get(remoteIndex));
@@ -116,8 +122,8 @@ final class GitOperations {
                 pull.setRemote("remote" + remoteIndex);
 
                 //set timeout if defined
-                if (timeout != -1){
-                    pull.setTimeout(timeout);
+                if (duration != -1){
+                    pull.setTimeout(duration);
                 }
                 // Added but not deployed yet
                 pull.setProgressMonitor(LOGGING_PROGRESS_MONITOR);
