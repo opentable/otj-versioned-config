@@ -31,7 +31,7 @@ public class GitProperties {
     private final Path localRepository;
     private final String branch;
 
-    private final int duration;
+    private final int durations;
 
     public GitProperties(URI remoteRepository,
                          @Nullable Path localRepository,
@@ -45,7 +45,7 @@ public class GitProperties {
         this.remoteRepositories = ImmutableList.copyOf(remoteRepositories);
         this.localRepository = localRepository;
         this.branch = branch;
-        this.duration = -1;
+        this.durations = -1;
     }
 
     /*
@@ -60,7 +60,7 @@ public class GitProperties {
         this.remoteRepositories = ImmutableList.copyOf(remoteRepositories);
         this.localRepository = localRepository;
         this.branch = branch;
-        this.duration = duration;
+        this.durations = duration;
     }
 
     public List<URI> getRemoteRepositories() {
@@ -75,7 +75,7 @@ public class GitProperties {
         return branch;
     }
 
-    public int getDuration() { return duration; }
+    public int getDurations() { return durations; }
 
     @Override
     public boolean equals(Object o) {
@@ -90,12 +90,12 @@ public class GitProperties {
         return Objects.equal(remoteRepositories, that.remoteRepositories) &&
                 Objects.equal(localRepository, that.localRepository) &&
                 Objects.equal(branch, that.branch) &&
-                Objects.equal(duration, that.duration);
+                Objects.equal(durations, that.durations);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(remoteRepositories, localRepository, branch, duration);
+        return Objects.hashCode(remoteRepositories, localRepository, branch, durations);
     }
 
     @Override
@@ -104,7 +104,7 @@ public class GitProperties {
                 "remoteRepositories=" + remoteRepositories +
                 ", localRepository=" + localRepository +
                 ", branch='" + branch + '\'' +
-                ", duration=" + duration +
+                ", durations=" + durations +
                 '}';
     }
 }

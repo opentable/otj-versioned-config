@@ -66,10 +66,10 @@ final class GitOperations {
             op.setCredentialsProvider(new UsernamePasswordCredentialsProvider(StringUtils.substringBefore(ui, ":"), StringUtils.substringAfter(ui, ":")));
         }
 
-        int duration = config.getDuration();
-        if (duration != -1){
-            op.setTimeout(duration);
-            LOG.trace("set duration: {}", duration);
+        int durations = config.getDurations();
+        if (durations > 0){
+            op.setTimeout(durations);
+            LOG.trace("set durations: {}", durations);
         }
     }
 
