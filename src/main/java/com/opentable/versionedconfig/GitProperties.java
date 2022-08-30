@@ -48,6 +48,11 @@ public class GitProperties {
         this.timeoutInSec = -1;
     }
 
+    /*
+     * Isolate new timeout feature into own constructor for now.
+     * Dependent services will override bean defaultVersioningServiceProperties
+     * to initialize this constructor and set timeout as needed.
+     */
     public GitProperties(List<URI> remoteRepositories,
                          @Nullable Path localRepository,
                          String branch,
