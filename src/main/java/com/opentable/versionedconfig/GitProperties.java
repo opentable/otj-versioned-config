@@ -31,6 +31,8 @@ public class GitProperties {
     private final Path localRepository;
     private final String branch;
 
+    private final int timeoutInSec;
+
     public GitProperties(URI remoteRepository,
                          @Nullable Path localRepository,
                          String branch) {
@@ -43,6 +45,17 @@ public class GitProperties {
         this.remoteRepositories = ImmutableList.copyOf(remoteRepositories);
         this.localRepository = localRepository;
         this.branch = branch;
+        this.timeoutInSec = -1;
+    }
+
+    public GitProperties(List<URI> remoteRepositories,
+                         @Nullable Path localRepository,
+                         String branch,
+                         int timeoutInSec){
+        this.remoteRepositories = ImmutableList.copyOf(remoteRepositories);
+        this.localRepository = localRepository;
+        this.branch = branch;
+        this.timeoutInSec = timeoutInSec;
     }
 
     public List<URI> getRemoteRepositories() {
@@ -57,6 +70,8 @@ public class GitProperties {
         return branch;
     }
 
+    public int getTimeoutInSec() { return timeoutInSec; }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -69,12 +84,13 @@ public class GitProperties {
         GitProperties that = (GitProperties) o;
         return Objects.equal(remoteRepositories, that.remoteRepositories) &&
                 Objects.equal(localRepository, that.localRepository) &&
-                Objects.equal(branch, that.branch);
+                Objects.equal(branch, that.branch) &&
+                Objects.equal(timeoutInSec, that.timeoutInSec);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(remoteRepositories, localRepository, branch);
+        return Objects.hashCode(remoteRepositories, localRepository, branch, timeoutInSec);
     }
 
     @Override
@@ -83,6 +99,7 @@ public class GitProperties {
                 "remoteRepositories=" + remoteRepositories +
                 ", localRepository=" + localRepository +
                 ", branch='" + branch + '\'' +
+                ", timeoutInSec=" + timeoutInSec +
                 '}';
     }
 }

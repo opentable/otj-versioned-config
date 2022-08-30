@@ -108,11 +108,17 @@ final class GitOperations {
         LOG.trace("pulling latest");
         return upstreamRetry(remoteIndex -> {
             try {
+                int timeout = config.getTimeoutInSec();
                 final PullCommand pull = git.pull();
                 LOG.trace("Git pull completed");
                 configureCredentials(pull, config.getRemoteRepositories().get(remoteIndex));
                 LOG.trace("Configuration of credentials completed, setting remote {}", remoteIndex);
                 pull.setRemote("remote" + remoteIndex);
+
+                //set timeout if defined
+                if (timeout != -1){
+                    pull.setTimeout(timeout);
+                }
                 // Added but not deployed yet
                 pull.setProgressMonitor(LOGGING_PROGRESS_MONITOR);
                 PullResult result = pull.call();
