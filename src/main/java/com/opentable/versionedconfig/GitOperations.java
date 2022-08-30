@@ -65,6 +65,12 @@ final class GitOperations {
         if (StringUtils.isNotBlank(ui)) {
             op.setCredentialsProvider(new UsernamePasswordCredentialsProvider(StringUtils.substringBefore(ui, ":"), StringUtils.substringAfter(ui, ":")));
         }
+
+        int duration = config.getDuration();
+        if (duration != -1){
+            op.setTimeout(duration);
+            LOG.trace("set duration: {}", duration);
+        }
     }
 
     private Git openRepo(final GitProperties serviceConfig, Path checkoutDir)
@@ -79,18 +85,12 @@ final class GitOperations {
             LOG.info("cloning {} (branch {}) to {}", remoteIndex, cloneBranch, checkoutDir);
 
             try {
-                int duration = config.getDuration();
                 final URI uri = remotes.get(remoteIndex);
                 CloneCommand clone = Git.cloneRepository()
                         .setBare(false)
                         .setBranch(cloneBranch)
                         .setDirectory(checkoutDir.toFile())
                         .setURI(uri.toString());
-
-                if (duration != -1){
-                    clone.setTimeout(duration);
-                }
-                
                 configureCredentials(clone, uri);
                 return clone.call();
             } catch (GitAPIException ioe) {
@@ -114,17 +114,11 @@ final class GitOperations {
         LOG.trace("pulling latest");
         return upstreamRetry(remoteIndex -> {
             try {
-                int duration = config.getDuration();
                 final PullCommand pull = git.pull();
                 LOG.trace("Git pull completed");
                 configureCredentials(pull, config.getRemoteRepositories().get(remoteIndex));
                 LOG.trace("Configuration of credentials completed, setting remote {}", remoteIndex);
                 pull.setRemote("remote" + remoteIndex);
-
-                //set timeout if defined
-                if (duration != -1){
-                    pull.setTimeout(duration);
-                }
                 // Added but not deployed yet
                 pull.setProgressMonitor(LOGGING_PROGRESS_MONITOR);
                 PullResult result = pull.call();
