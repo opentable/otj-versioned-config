@@ -13,6 +13,7 @@
  */
 package com.opentable.versionedconfig.testing;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -20,16 +21,29 @@ import java.util.Collection;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.errors.ConfigInvalidException;
+import org.eclipse.jgit.lib.ConfigConstants;
+import org.eclipse.jgit.util.SystemReader;
 import org.junit.rules.ExternalResource;
 
 public class GitRule extends ExternalResource {
     private final Path localPath;
     private final Collection<GitAction> actions;
     private final Git gitRepo;
+    private final boolean readUserConfig;
 
     GitRule(Path localPath, Collection<GitAction> actions) {
         this.localPath = localPath;
         this.actions = actions;
+        this.readUserConfig = false;
+        this.gitRepo = initRepo();
+
+    }
+
+    GitRule(Path localPath, Collection<GitAction> actions, boolean readUserConfig) {
+        this.localPath = localPath;
+        this.actions = actions;
+        this.readUserConfig = readUserConfig;
         this.gitRepo = initRepo();
     }
 
@@ -63,10 +77,14 @@ public class GitRule extends ExternalResource {
     }
 
     private Git initRepo() {
-        InitCommand init = Git.init();
         try {
+            if (!readUserConfig) {
+                SystemReader.getInstance().getUserConfig().clear();
+            }
+            SystemReader.getInstance().getUserConfig().setBoolean(ConfigConstants.CONFIG_GC_SECTION, null, ConfigConstants.CONFIG_KEY_AUTODETACH, false);
+            InitCommand init = Git.init();
             return init.setBare(false).setDirectory(this.localPath.toFile()).call();
-        } catch (GitAPIException e) {
+        } catch (GitAPIException | ConfigInvalidException | IOException e) {
             throw new RuntimeException("failed to initialize temporary repo", e);
         }
     }
