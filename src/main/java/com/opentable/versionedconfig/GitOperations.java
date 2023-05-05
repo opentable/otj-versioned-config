@@ -35,7 +35,9 @@ import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.TransportCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
+import org.eclipse.jgit.errors.ConfigInvalidException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
+import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
@@ -47,6 +49,7 @@ import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.transport.URIish;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
+import org.eclipse.jgit.util.SystemReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,6 +83,7 @@ final class GitOperations {
 
             try {
                 final URI uri = remotes.get(remoteIndex);
+                SystemReader.getInstance().getUserConfig().setBoolean(ConfigConstants.CONFIG_GC_SECTION, null, ConfigConstants.CONFIG_KEY_AUTODETACH, false);
                 CloneCommand clone = Git.cloneRepository()
                         .setBare(false)
                         .setBranch(cloneBranch)
@@ -87,7 +91,7 @@ final class GitOperations {
                         .setURI(uri.toString());
                 configureCredentials(clone, uri);
                 return clone.call();
-            } catch (GitAPIException ioe) {
+            } catch (GitAPIException | ConfigInvalidException | IOException ioe) {
                 throw new VersioningServiceException("Could not clone repo", ioe);
             }
         });
@@ -249,6 +253,11 @@ final class GitOperations {
             @Override
             public boolean isCancelled() {
                 return false;
+            }
+
+            @Override
+            public void showDuration(boolean b) {
+
             }
     }
 }
